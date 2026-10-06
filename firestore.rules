@@ -1,0 +1,185 @@
+rules_version = '2';
+
+// Servly security rules (AGENTS.md section 9). Anything not allowed below is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Who is asking? ----------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Signed in AND approved: has a users/{uid} document that is active with a valid role
+    function isActive() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc().active == true
+        && userDoc().role in ['admin', 'staff'];
+    }
+
+    function isAdmin() {
+      return isActive() && userDoc().role == 'admin';
+    }
+
+    // ---------- users ----------
+
+    match /users/{uid} {
+      // You can read your own profile (needed for the "waiting for approval" screen); admins can read everyone's
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      // Signing up creates a profile that is staff + inactive. Nobody can create themselves as admin or pre-approved.
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['displayName', 'email', 'role', 'active', 'createdAt'])
+        && request.resource.data.keys().hasAll(['displayName', 'email', 'role', 'active', 'createdAt'])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 100
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'staff'
+        && request.resource.data.active == false
+        && request.resource.data.createdAt == request.time;
+
+      // Admins approve/deactivate and change roles, but never their own (so the last admin can't lock themselves out).
+      // Regular users cannot update anything, including their own role.
+      allow update: if isAdmin()
+        && request.auth.uid != uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'active'])
+        && request.resource.data.role in ['admin', 'staff']
+        && request.resource.data.active is bool;
+
+      allow delete: if false;
+    }
+
+    // ---------- courts ----------
+
+    function validCourt(c) {
+      return c.keys().hasOnly(['name', 'surface', 'status', 'hourlyRateMinor', 'color', 'sortOrder', 'archived'])
+        && c.keys().hasAll(['name', 'surface', 'status', 'hourlyRateMinor', 'color', 'sortOrder', 'archived'])
+        && c.name is string && c.name.size() > 0
+        && c.surface is string
+        && c.status in ['available', 'maintenance']
+        && c.hourlyRateMinor is int && c.hourlyRateMinor >= 0
+        && c.color is string
+        && c.sortOrder is number
+        && c.archived is bool;
+    }
+
+    match /courts/{courtId} {
+      allow read: if isActive();
+      // Courts are archived (archived: true), never deleted, so past bookings keep their court
+      allow create, update: if isAdmin() && validCourt(request.resource.data);
+      allow delete: if false;
+    }
+
+    // ---------- bookings ----------
+
+    function validBooking(b) {
+      return b.keys().hasOnly([
+          'courtId', 'courtName', 'customerName', 'customerPhone', 'customerEmail', 'date', 'startAt', 'endAt',
+          'durationMinutes', 'hourlyRateMinor', 'totalMinor', 'status', 'notes', 'createdBy', 'createdAt',
+          'updatedAt', 'searchKey'
+        ])
+        && b.keys().hasAll([
+          'courtId', 'courtName', 'customerName', 'customerPhone', 'customerEmail', 'date', 'startAt', 'endAt',
+          'durationMinutes', 'hourlyRateMinor', 'totalMinor', 'status', 'notes', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && b.courtId is string
+        && b.courtName is string
+        && b.customerName is string && b.customerName.size() > 0
+        && b.customerPhone is string
+        && (b.customerEmail == null || b.customerEmail is string)
+        && b.date is string && b.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && b.startAt is timestamp
+        && b.endAt is timestamp && b.endAt > b.startAt
+        && b.durationMinutes is int && b.durationMinutes > 0
+        && b.hourlyRateMinor is int && b.hourlyRateMinor >= 0
+        && b.totalMinor is int && b.totalMinor >= 0
+        && b.status in ['confirmed', 'pending', 'cancelled']
+        && (b.notes == null || b.notes is string)
+        && b.createdBy is string
+        && b.createdAt is timestamp
+        && b.updatedAt is timestamp;
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if isActive();
+      allow create: if isActive()
+        && validBooking(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid;
+      // Staff cancel by setting status to "cancelled"; they can't reassign who created it
+      allow update: if isActive()
+        && validBooking(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isAdmin();
+    }
+
+    // ---------- slots (the double-booking guard) ----------
+    // One document per occupied half-hour. The document id is courtId_date_HHmm, so two bookings for the same
+    // court and time try to create the same document, and the second one is refused.
+
+    function validSlot(slotId, s) {
+      return s.keys().hasOnly(['courtId', 'date', 'bookingId', 'blockId'])
+        && s.keys().hasAll(['courtId', 'date', 'bookingId', 'blockId'])
+        && s.courtId is string
+        && s.date is string
+        && (s.bookingId is string || s.bookingId == null)
+        && (s.blockId is string || s.blockId == null)
+        && (s.bookingId is string) != (s.blockId is string)
+        && slotId.matches(s.courtId + '_' + s.date + '_[0-9]{4}');
+    }
+
+    match /slots/{slotId} {
+      allow read: if isActive();
+      // `create` only succeeds when the document does not exist yet. There is deliberately no `update`.
+      allow create: if isActive() && validSlot(slotId, request.resource.data);
+      allow delete: if isActive();
+    }
+
+    // ---------- blocks (maintenance / blocked time) ----------
+
+    match /blocks/{blockId} {
+      allow read: if isActive();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['courtId', 'startAt', 'endAt', 'reason', 'createdBy'])
+        && request.resource.data.keys().hasAll(['courtId', 'startAt', 'endAt', 'reason', 'createdBy'])
+        && request.resource.data.courtId is string
+        && request.resource.data.startAt is timestamp
+        && request.resource.data.endAt is timestamp
+        && request.resource.data.endAt > request.resource.data.startAt
+        && request.resource.data.reason is string
+        && request.resource.data.createdBy == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // ---------- settings (one document: settings/center) ----------
+
+    match /settings/{settingId} {
+      allow read: if isActive();
+      allow create, update: if isAdmin()
+        && settingId == 'center'
+        && request.resource.data.keys().hasOnly(['centerName', 'currency', 'timezone', 'openTime', 'closeTime', 'slotMinutes'])
+        && request.resource.data.keys().hasAll(['centerName', 'currency', 'timezone', 'openTime', 'closeTime', 'slotMinutes'])
+        && request.resource.data.centerName is string
+        && request.resource.data.currency is string
+        && request.resource.data.timezone is string
+        && request.resource.data.openTime.matches('^[0-2][0-9]:[0-5][0-9]$')
+        && request.resource.data.closeTime.matches('^[0-2][0-9]:[0-5][0-9]$')
+        && request.resource.data.slotMinutes is int
+        && request.resource.data.slotMinutes > 0;
+      allow delete: if false;
+    }
+
+    // ---------- everything else ----------
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
