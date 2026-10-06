@@ -1,0 +1,27 @@
+/*
+ * Typography tokens.
+ * Montserrat Bold for headings and numbers (echoes the logo wordmark), Inter for all interface text.
+ * The font files themselves are loaded by the <link> tags in index.html.
+ */
+@theme static {
+  --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale: size / line-height. Gives the text-h1, text-h2, text-body and text-overline utilities. */
+  --text-h1: 1.75rem; /* 28 */
+  --text-h1--line-height: 2.125rem; /* 34 */
+  --text-h1--font-weight: 700;
+
+  --text-h2: 1.25rem; /* 20 */
+  --text-h2--line-height: 1.625rem; /* 26 */
+  --text-h2--font-weight: 700;
+
+  --text-body: 0.875rem; /* 14 */
+  --text-body--line-height: 1.25rem; /* 20 */
+  --text-body--font-weight: 400;
+
+  --text-overline: 0.6875rem; /* 11 */
+  --text-overline--line-height: 1rem; /* 16 */
+  --text-overline--font-weight: 700;
+  --text-overline--letter-spacing: 0.08em;
+}

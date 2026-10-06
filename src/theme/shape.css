@@ -1,0 +1,15 @@
+/* Radius, elevation and motion tokens. */
+@theme static {
+  /* Radius: cards 14, buttons 10, chips 6, pills 999 */
+  --radius-card: 0.875rem;
+  --radius-button: 0.625rem;
+  --radius-chip: 0.375rem;
+  --radius-pill: 999px;
+
+  /* Cards are separated by a border; the shadow is only a hint of lift */
+  --shadow-card: 0 1px 2px 0 rgb(11 31 51 / 0.04);
+
+  /* Motion stays minimal: 150ms transitions only */
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: ease-out;
+}

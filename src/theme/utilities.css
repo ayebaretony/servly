@@ -1,0 +1,192 @@
+/*
+ * Reusable style recipes built from the tokens, for the UI primitives (Button, Card, Badge, Table, ...).
+ * Use these instead of re-typing long class lists. Spacing, layout and one-off tweaks stay as normal Tailwind classes.
+ */
+
+/* ---------- Type roles (Brand Style Sheet, "Typography") ---------- */
+
+/* H1: Montserrat 28/34 Bold, e.g. "Good morning, Tony" */
+@utility type-h1 {
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: var(--text-h1);
+  line-height: var(--text-h1--line-height);
+  font-weight: var(--text-h1--font-weight);
+}
+
+/* H2: Montserrat 20/26 Bold, e.g. "Revenue this month" */
+@utility type-h2 {
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  line-height: var(--text-h2--line-height);
+  font-weight: var(--text-h2--font-weight);
+}
+
+/* Body: Inter 14/20 Regular */
+@utility type-body {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: var(--text-body--font-weight);
+}
+
+/* Overline: Inter 11/16 Bold caps, e.g. "TODAY'S BOOKINGS". Pair with text-muted or text-ink. */
+@utility type-overline {
+  font-family: var(--font-sans);
+  font-size: var(--text-overline);
+  line-height: var(--text-overline--line-height);
+  font-weight: var(--text-overline--font-weight);
+  letter-spacing: var(--text-overline--letter-spacing);
+  text-transform: uppercase;
+}
+
+/* Big numbers: Montserrat Bold, e.g. "18" and "AED 540" on stat cards */
+@utility type-stat {
+  color: var(--color-ink);
+  font-family: var(--font-heading);
+  font-size: var(--text-h1);
+  line-height: var(--text-h1--line-height);
+  font-weight: 700;
+}
+
+/* ---------- Surfaces ---------- */
+
+/* White card: 1px border, 14px radius, barely-there shadow */
+@utility card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Header cell of a table (apply to <th> or the header <tr>) */
+@utility table-head {
+  background-color: var(--color-table-head);
+  color: var(--color-ink);
+  font-size: var(--text-overline);
+  line-height: var(--text-overline--line-height);
+  font-weight: var(--text-overline--font-weight);
+  letter-spacing: var(--text-overline--letter-spacing);
+  text-transform: uppercase;
+}
+
+/* ---------- Buttons ---------- */
+
+/* Shared button shape. Combine with btn-primary or btn-secondary. */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding-inline: 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: 600;
+  white-space: nowrap;
+  transition-property: background-color, border-color, color, box-shadow;
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Solid navy, e.g. "+ New booking" */
+@utility btn-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+}
+
+/* White with a border */
+@utility btn-secondary {
+  background-color: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-sidebar);
+  }
+}
+
+/* ---------- Status badges ---------- */
+/* Status always shows a word or an icon next to the colour, never colour alone. */
+
+@utility badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Confirmed, Paid, Available */
+@utility badge-success {
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+/* Pending, Maintenance */
+@utility badge-warning {
+  background-color: var(--color-warning-soft);
+  color: var(--color-warning-ink);
+}
+
+/* Cancelled, errors */
+@utility badge-danger {
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/* ---------- Courts ---------- */
+/* Both read the --court-color variable. Set it inline from the court's stored key:
+   style={{ "--court-color": courtColorVar(court.color) }}  (see courtColors.ts) */
+
+/* Small round marker used in tables, legends and the timeline */
+@utility court-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--court-color, var(--color-border-strong));
+}
+
+/* Calendar booking chip: "customer · time" with the court colour as a left border */
+@utility court-chip {
+  display: block;
+  overflow: hidden;
+  padding: 0.125rem 0.5rem;
+  border-left: 3px solid var(--court-color, var(--color-border-strong));
+  border-radius: var(--radius-chip);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Focus ---------- */
+
+/* Explicit focus ring for custom widgets that hide the native outline (the global :focus-visible rule covers the rest) */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}

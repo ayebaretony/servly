@@ -1,0 +1,47 @@
+/*
+ * Colour tokens, from the Servly Brand Style Sheet.
+ * `static` keeps every variable in the CSS output, so they can also be read with var(--color-*) from plain CSS or JS.
+ * Never hard-code hex values in components; use the utility names (bg-primary, text-muted, ...).
+ */
+@theme static {
+  /* Primary scale: navy */
+  --color-navy-900: #04355e; /* Buttons, active nav, headings */
+  --color-navy-700: #0b4a7a; /* Hover */
+  --color-navy-500: #2f6fa3; /* Focus ring */
+  --color-navy-100: #dce8f2; /* Table headers */
+  --color-navy-50: #eef4f9; /* Sidebar */
+
+  /* Accent: highlights and fills only. Too light for text on white. */
+  --color-lime-500: #72cc3e;
+
+  /* Status. "-soft" is the tinted badge background, "-ink" is the text colour on it. */
+  --color-success: #1b6b3a; /* Confirmed, Paid, Available */
+  --color-success-soft: #e3f4ea;
+  --color-warning: #f5b301; /* Pending, maintenance */
+  --color-warning-ink: #8a5300;
+  --color-warning-soft: #fff1cc;
+  --color-danger: #b42318; /* Cancelled, errors */
+  --color-danger-soft: #fdeceb;
+
+  /* Court colours: dot, calendar chip border, timeline. Order matters, see courtColors.ts. */
+  --color-court-1: #2f6fa3;
+  --color-court-2: #5fae2e;
+  --color-court-3: #0e9aa7;
+  --color-court-4: #8a4f7d;
+
+  /* Neutrals */
+  --color-ink: #0b1f33;
+  --color-muted: #546576;
+  --color-border-strong: #6b7b8b;
+  --color-border: #dde4eb;
+  --color-page: #fbfaf6;
+  --color-surface: #ffffff;
+
+  /* Semantic aliases: components should prefer these over the raw scale */
+  --color-primary: var(--color-navy-900);
+  --color-primary-hover: var(--color-navy-700);
+  --color-accent: var(--color-lime-500);
+  --color-focus: var(--color-navy-500);
+  --color-table-head: var(--color-navy-100);
+  --color-sidebar: var(--color-navy-50);
+}
