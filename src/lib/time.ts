@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 // "Today", "this month" and every displayed time use the center timezone, never the browser's (AGENTS.md "Time rules").
 // Calendar days travel as "YYYY-MM-DD" strings, which is also what bookings.date stores.
@@ -36,6 +36,23 @@ export function minutesOfDay(date: Date, timezone: string): number {
 export function parseHHmm(value: string): number {
   const [hours, minutes] = value.split(":").map(Number);
   return hours * 60 + minutes;
+}
+
+// The real moment (UTC) when a wall-clock time happens at the center: "2024-06-18" + 540 in Asia/Dubai -> 09:00 Dubai time
+export function zonedDateTime(date: string, minutes: number, timezone: string): Date {
+  return fromZonedTime(`${date}T${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}:00`, timezone);
+}
+
+// 570 -> "9:30 AM"
+export function formatMinutes(minutes: number): string {
+  return format(new Date(2000, 0, 1, Math.floor(minutes / 60), minutes % 60), "h:mm a");
+}
+
+// 90 -> "1 hr 30 min", 60 -> "1 hr", 30 -> "30 min"
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return [hours > 0 && `${hours} hr`, rest > 0 && `${rest} min`].filter(Boolean).join(" ");
 }
 
 // Adds (or subtracts) days on a date string. Done in UTC so daylight-saving shifts can't move the result.
@@ -81,9 +98,73 @@ export function formatShortDate(date: string): string {
   return format(localDate(date), "EEE, MMM d");
 }
 
+// "Jun 18", or "Jun 18, 2024" when the date is not in the same year as `today`
+export function formatDayLabel(date: string, today: string): string {
+  const sameYear = date.slice(0, 4) === today.slice(0, 4);
+  return format(localDate(date), sameYear ? "MMM d" : "MMM d, yyyy");
+}
+
+// Whole days from `from` to `to`, counting both ends: same day -> 1, Jun 18 to Jun 20 -> 3. Done in UTC like addDays.
+export function daysInclusive(from: string, to: string): number {
+  const start = parseDateString(from);
+  const end = parseDateString(to);
+  const millis = Date.UTC(end.year, end.month - 1, end.day) - Date.UTC(start.year, start.month - 1, start.day);
+  return Math.round(millis / 86_400_000) + 1;
+}
+
 // "June"
 export function formatMonthName(date: string): string {
   return format(localDate(date), "MMMM");
+}
+
+// "June 2024"
+export function formatMonthYear(date: string): string {
+  return format(localDate(date), "MMMM yyyy");
+}
+
+// "Tuesday, June 18"
+export function formatWeekdayDate(date: string): string {
+  return format(localDate(date), "EEEE, MMMM d");
+}
+
+// "Tue 18" / "TUE": short column heads for the week and day grids
+export function formatWeekdayShort(date: string): string {
+  return format(localDate(date), "EEE");
+}
+
+export function dayOfMonth(date: string): number {
+  return parseDateString(date).day;
+}
+
+// 0 = Sunday ... 6 = Saturday. The calendar weeks run Sunday to Saturday, as in the design.
+export function dayOfWeek(date: string): number {
+  const { year, month, day } = parseDateString(date);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+export function weekStart(date: string): string {
+  return addDays(date, -dayOfWeek(date));
+}
+
+export function weekEnd(date: string): string {
+  return addDays(weekStart(date), 6);
+}
+
+// "Jun 16 – 22, 2024", or "Jun 28 – Jul 4, 2024" when the week spans two months
+export function formatWeekRange(date: string): string {
+  const start = localDate(weekStart(date));
+  const end = localDate(weekEnd(date));
+  const startText = format(start, "MMM d");
+  const endText = format(end, start.getMonth() === end.getMonth() ? "d, yyyy" : "MMM d, yyyy");
+  return `${startText} – ${endText}`;
+}
+
+// The same day-of-month one month on, or the last day of that month when it is shorter (Jan 31 + 1 month -> Feb 28/29)
+export function addMonths(date: string, months: number): string {
+  const { year, month, day } = parseDateString(date);
+  const first = new Date(Date.UTC(year, month - 1 + months, 1));
+  const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  return toDateString(first.getUTCFullYear(), first.getUTCMonth() + 1, Math.min(day, lastDay));
 }
 
 // "9:00 AM"

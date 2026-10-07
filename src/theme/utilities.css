@@ -118,6 +118,16 @@
   }
 }
 
+/* Solid red, for confirming a destructive action such as archiving a court */
+@utility btn-danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+
+  &:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-danger) 88%, black);
+  }
+}
+
 /* ---------- Status badges ---------- */
 /* Status always shows a word or an icon next to the colour, never colour alone. */
 

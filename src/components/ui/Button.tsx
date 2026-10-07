@@ -1,12 +1,13 @@
 import type { ComponentPropsWithoutRef } from "react";
 
 type ButtonProps = ComponentPropsWithoutRef<"button"> & {
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "danger";
 };
 
 const VARIANT_CLASS = {
   primary: "btn-primary",
   secondary: "btn-secondary",
+  danger: "btn-danger",
 } as const;
 
 // The look lives in theme/utilities.css (btn, btn-primary, btn-secondary); this just picks the right ones.

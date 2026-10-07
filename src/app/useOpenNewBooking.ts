@@ -1,8 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { BookingModalContext } from "./BookingModalContext";
 
-// The "+ New booking" button calls this from any page. The booking modal arrives in Phase 3;
-// until then it takes you to the Bookings page. Swap the body here and every button follows.
+// Every "+ New booking" button calls this. It opens the booking pop-up that lives in AppShell.
 export function useOpenNewBooking() {
-  const navigate = useNavigate();
-  return () => navigate("/bookings");
+  const value = useContext(BookingModalContext);
+  if (!value) throw new Error("useOpenNewBooking must be used inside <BookingModalProvider>.");
+  return value.openNewBooking;
 }
