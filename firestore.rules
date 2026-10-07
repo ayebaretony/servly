@@ -59,13 +59,15 @@ service cloud.firestore {
 
     // ---------- courts ----------
 
+    // A court has no price: the hourly rate is set on each booking. Courts made before that change still carry
+    // an old hourlyRateMinor, so it is allowed (but not required) to keep editing them working.
     function validCourt(c) {
       return c.keys().hasOnly(['name', 'surface', 'status', 'hourlyRateMinor', 'color', 'sortOrder', 'archived'])
-        && c.keys().hasAll(['name', 'surface', 'status', 'hourlyRateMinor', 'color', 'sortOrder', 'archived'])
+        && c.keys().hasAll(['name', 'surface', 'status', 'color', 'sortOrder', 'archived'])
         && c.name is string && c.name.size() > 0
         && c.surface is string
         && c.status in ['available', 'maintenance']
-        && c.hourlyRateMinor is int && c.hourlyRateMinor >= 0
+        && (!('hourlyRateMinor' in c) || (c.hourlyRateMinor is int && c.hourlyRateMinor >= 0))
         && c.color is string
         && c.sortOrder is number
         && c.archived is bool;

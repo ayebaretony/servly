@@ -133,10 +133,10 @@ Two screenshots (Bookings, Courts) show a large empty gap at the top of the page
 
 ### Courts (`Courts.png`)
 - "Manage your courts" + **Add court**.
-- Stat cards: Total courts, Available now, In maintenance, Average rate.
-- Table: color dot, name, type/surface (e.g., "Outdoor hard court", "Indoor acrylic court"), status badge, today's bookings, hourly rate, Edit + menu.
+- Stat cards: Total courts, Available now, In maintenance. (No average rate: courts have no rate, see "Money rules".)
+- Table: color dot, name, type/surface (e.g., "Outdoor hard court", "Indoor acrylic court"), status badge, today's bookings, Edit + menu.
 - **Today's availability** stacked bar (booked hours vs. open hours).
-- **Quick actions:** Block time for maintenance, Update hourly rates, View calendar.
+- **Quick actions:** Block time for maintenance, View calendar.
 
 ### Revenue and Settings (no screenshots yet)
 Design these **later, in the same visual style** (Phase 6) and show the owner a plan before building. Do not build them before Phase 6.
@@ -183,7 +183,6 @@ courts/{courtId}
   name: string                  // "Court 1"
   surface: string               // "Outdoor hard court"
   status: "available" | "maintenance"
-  hourlyRateMinor: number       // integer, minor units
   color: string                 // palette key
   sortOrder: number
   archived: boolean             // soft delete, never hard-delete a court with bookings
@@ -198,7 +197,7 @@ bookings/{bookingId}
   startAt: Timestamp
   endAt: Timestamp
   durationMinutes: number
-  hourlyRateMinor: number       // SNAPSHOT of the rate at booking time
+  hourlyRateMinor: number       // typed per booking (members/partners pay different rates); never recomputed later
   totalMinor: number            // snapshot, never recomputed later
   status: "confirmed" | "pending" | "cancelled"
   notes: string | null
@@ -235,7 +234,7 @@ settings/center                 // single doc
 - Minor unit is the fils (100 fils = 1 AED), so `hourlyRateMinor: 15000` means AED 150.00.
 - Format with `Intl.NumberFormat("en-AE", { style: "currency", currency: "AED" })`, driven by `settings/center.currency` (seeded as `"AED"`). Never hard-code `$` or `AED` strings in components; always go through the shared formatter in `lib/money.ts`.
 - Rate labels read like "AED 150/hr" instead of "$30/hr".
-- Bookings keep their own rate/total snapshot so changing a court's rate later doesn't rewrite history.
+- **Courts have no rate.** The hourly rate is entered on each booking ("Hourly rate" field in the booking form), because customers pay different rates depending on membership or partnership. The booking stores its own rate and total.
 
 ### Time rules
 - Store timestamps in UTC (Firestore `Timestamp`). Display and calculate "today", "this week", "this month" in `settings/center.timezone`.
@@ -313,7 +312,7 @@ Vite + React + TS + Tailwind, Firebase project connection, Emulator Suite, `.env
 Login page (email/password, Google, forgot password), auth guard, approval-pending screen, sidebar + top bar layout, `users` doc and role handling, first-draft `firestore.rules`.
 
 **Phase 2: Courts**
-Courts list, add/edit court, status (available/maintenance), hourly rate, color. Seed `settings/center`.
+Courts list, add/edit court, status (available/maintenance), color. Seed `settings/center`.
 
 **Phase 3: Bookings**
 New/edit/cancel booking modal, **transactional conflict prevention**, Bookings table with filters, search, pagination, CSV export, status changes.

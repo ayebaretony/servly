@@ -6,7 +6,6 @@ export type Court = {
   name: string;
   surface: string;
   status: CourtStatus;
-  hourlyRateMinor: number;
   color: string; // palette key, see theme/courtColors.ts
   sortOrder: number;
   archived: boolean;

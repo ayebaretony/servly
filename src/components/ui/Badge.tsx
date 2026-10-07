@@ -1,5 +1,6 @@
-import { Check, X } from "lucide-react";
+import { Check, Wrench, X } from "lucide-react";
 import type { BookingStatus } from "@/types/booking";
+import type { CourtStatus } from "@/types/court";
 
 const LABEL: Record<BookingStatus, string> = {
   confirmed: "Confirmed",
@@ -21,6 +22,25 @@ export function StatusBadge({ status }: { status: BookingStatus }) {
       {status === "pending" && <span aria-hidden="true" className="size-1.5 rounded-pill bg-warning" />}
       {status === "cancelled" && <X aria-hidden="true" className="size-3.5" strokeWidth={3} />}
       {LABEL[status]}
+    </span>
+  );
+}
+
+const COURT_LABEL: Record<CourtStatus, string> = {
+  available: "Available",
+  maintenance: "Maintenance",
+};
+
+// Available = green, Maintenance = red (AGENTS.md section 6). Word plus icon, so colour is never the only signal.
+export function CourtStatusBadge({ status }: { status: CourtStatus }) {
+  return (
+    <span className={`badge ${status === "available" ? "badge-success" : "badge-danger"}`}>
+      {status === "available" ? (
+        <Check aria-hidden="true" className="size-3.5" strokeWidth={3} />
+      ) : (
+        <Wrench aria-hidden="true" className="size-3.5" strokeWidth={2.5} />
+      )}
+      {COURT_LABEL[status]}
     </span>
   );
 }

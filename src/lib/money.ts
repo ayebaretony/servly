@@ -28,6 +28,19 @@ export function formatRate(hourlyRateMinor: number, currency: string): string {
   return `${formatMoney(hourlyRateMinor, currency)}/hr`;
 }
 
+// What a person types into a price field ("150", "52.5", "1,200.50") -> minor units (fils). null when it isn't a valid amount.
+// Two decimals at most, so nothing is silently rounded away.
+export function parseMajorToMinor(text: string): number | null {
+  const cleaned = text.trim().replace(/,/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+  return Math.round(Number(cleaned) * 100);
+}
+
+// Minor units -> text for a price field: 15000 -> "150", 5250 -> "52.50"
+export function minorToMajorInput(minor: number): string {
+  return minor % 100 === 0 ? String(minor / 100) : (minor / 100).toFixed(2);
+}
+
 // Partial hours are charged proportionally. Rounded once, to whole fils.
 export function calcTotalMinor(hourlyRateMinor: number, durationMinutes: number): number {
   return Math.round((hourlyRateMinor * durationMinutes) / 60);

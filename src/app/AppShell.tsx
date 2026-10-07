@@ -1,10 +1,23 @@
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+import { BookingModalProvider } from "./BookingModalProvider";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
-// Sidebar + top bar around every signed-in page. Below the `lg` breakpoint the sidebar becomes a drawer.
+// Sidebar + top bar around every signed-in page, plus the toasts and the "New booking" pop-up that any page can use.
 export function AppShell() {
+  return (
+    <ToastProvider>
+      <BookingModalProvider>
+        <ShellLayout />
+      </BookingModalProvider>
+    </ToastProvider>
+  );
+}
+
+// Below the `lg` breakpoint the sidebar becomes a drawer.
+function ShellLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Escape closes the drawer; the page behind it doesn't scroll while it is open

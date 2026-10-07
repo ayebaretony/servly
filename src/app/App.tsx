@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { PublicOnly, RequireAuth } from "@/features/auth/RouteGuards";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { SignUpPage } from "@/features/auth/SignUpPage";
+import { BookingsPage } from "@/features/bookings/BookingsPage";
+import { CalendarPage } from "@/features/calendar/CalendarPage";
+import { CourtsPage } from "@/features/courts/CourtsPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { AppShell } from "./AppShell";
 import { PlaceholderPage } from "./PlaceholderPage";
@@ -30,10 +33,10 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          {/* Placeholders until their phases: Calendar 4, Bookings 3, Courts 2, Revenue and Settings 6 */}
-          <Route path="/calendar" element={<PlaceholderPage name="Calendar" />} />
-          <Route path="/bookings" element={<PlaceholderPage name="Bookings" />} />
-          <Route path="/courts" element={<PlaceholderPage name="Courts" />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          {/* Placeholders until Phase 6 */}
+          <Route path="/bookings" element={<BookingsPage />} />
+          <Route path="/courts" element={<CourtsPage />} />
           <Route path="/revenue" element={<PlaceholderPage name="Revenue" />} />
           <Route path="/settings" element={<PlaceholderPage name="Settings" />} />
         </Route>
