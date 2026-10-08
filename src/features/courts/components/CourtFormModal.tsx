@@ -127,7 +127,7 @@ export function CourtFormModal({ court, courts, onClose, onSaved }: CourtFormMod
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" loading={saving}>
             {saving ? "Saving…" : isEditing ? "Save changes" : "Add court"}
           </Button>
         </ModalFooter>

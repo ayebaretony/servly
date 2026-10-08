@@ -56,7 +56,7 @@ export function CancelBookingModal({ booking, settings, today, onClose, onDone }
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Keep booking
         </Button>
-        <Button variant="danger" onClick={() => void confirm()} disabled={saving}>
+        <Button variant="danger" onClick={() => void confirm()} loading={saving}>
           {saving ? "Cancelling…" : "Cancel booking"}
         </Button>
       </ModalFooter>

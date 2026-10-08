@@ -67,7 +67,7 @@ function InactivityForm({ saved }: { saved: SecuritySettings }) {
             ))}
           </Select>
         </div>
-        <Button type="submit" disabled={saving || minutes === savedMinutes}>
+        <Button type="submit" loading={saving} disabled={minutes === savedMinutes}>
           {saving ? "Saving…" : "Save"}
         </Button>
       </div>

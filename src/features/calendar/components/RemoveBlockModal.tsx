@@ -67,7 +67,7 @@ export function RemoveBlockModal({ block, court, settings, today, onClose, onDon
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Keep block
         </Button>
-        <Button variant="danger" onClick={() => void confirm()} disabled={saving}>
+        <Button variant="danger" onClick={() => void confirm()} loading={saving}>
           {saving ? "Removing…" : "Remove block"}
         </Button>
       </ModalFooter>

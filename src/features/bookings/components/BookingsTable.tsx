@@ -69,7 +69,8 @@ export function BookingsTable({
   const isEmpty = rows.status === "ready" && rows.data.length === 0;
 
   return (
-    <Card>
+    // The tour points at the Status column, or at the whole card when there are no rows to show one
+    <Card data-tour={isEmpty ? "bookings-status" : undefined}>
       {isEmpty ? (
         pageIndex > 0 ? (
           // Possible after a delete removed the last row of the last page
@@ -105,7 +106,12 @@ export function BookingsTable({
             <thead>
               <tr className="table-head">
                 {COLUMNS.map((name) => (
-                  <th key={name} scope="col" className="whitespace-nowrap px-2.5 py-3 font-bold first:pl-6">
+                  <th
+                    key={name}
+                    scope="col"
+                    data-tour={name === "Status" ? "bookings-status" : undefined}
+                    className="whitespace-nowrap px-2.5 py-3 font-bold first:pl-6"
+                  >
                     {name}
                   </th>
                 ))}

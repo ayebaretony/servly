@@ -22,13 +22,3 @@ export function CourtStats({ courts }: { courts: Court[] }) {
     </dl>
   );
 }
-
-export function CourtStatsSkeleton() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-3" aria-hidden="true">
-      {[0, 1, 2].map((n) => (
-        <Card key={n} className="h-[74px]" />
-      ))}
-    </div>
-  );
-}

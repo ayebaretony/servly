@@ -79,7 +79,7 @@ export function ConfirmUserActionModal({ action, user, onClose }: ConfirmUserAct
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Cancel
         </Button>
-        <Button variant="danger" onClick={() => void confirm()} disabled={saving}>
+        <Button variant="danger" onClick={() => void confirm()} loading={saving}>
           {saving ? copy.busy : copy.button}
         </Button>
       </ModalFooter>

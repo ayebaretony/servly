@@ -1,8 +1,9 @@
 import { Suspense, useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { AceSuspenseFallback } from "@/components/ui/AceLoadingState";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { useAuth } from "@/features/auth/useAuth";
+import { TourProvider } from "@/features/tour/TourProvider";
 import { UsersProvider } from "@/features/settings/UsersProvider";
 import { BookingModalProvider } from "./BookingModalProvider";
 import { SessionGuard } from "./SessionGuard";
@@ -19,8 +20,10 @@ export function AppShell() {
     <ToastProvider>
       <UsersProvider enabled={isAdmin}>
         <BookingModalProvider>
-          <SessionGuard />
-          <ShellLayout />
+          <TourProvider>
+            <SessionGuard />
+            <ShellLayout />
+          </TourProvider>
         </BookingModalProvider>
       </UsersProvider>
     </ToastProvider>
@@ -66,7 +69,7 @@ function ShellLayout() {
         <Topbar onOpenMenu={() => setDrawerOpen(true)} />
         <main className="px-4 py-6 sm:px-8">
           {/* The sidebar and top bar stay on screen while a page's code downloads */}
-          <Suspense fallback={<div className="space-y-4" role="status" aria-label="Loading page"><Skeleton className="h-8 w-64" /><Skeleton className="h-64 w-full" /></div>}>
+          <Suspense fallback={<AceSuspenseFallback size="lg" label="Loading page…" />}>
             <Outlet />
           </Suspense>
         </main>

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useBookingsVersion } from "@/app/useBookingsVersion";
 import { useOpenNewBookingOn } from "@/app/useOpenNewBookingOn";
+import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { BookingDetailsModal } from "@/features/bookings/components/BookingDetailsModal";
 import { CancelBookingModal } from "@/features/bookings/components/CancelBookingModal";
@@ -22,6 +22,7 @@ import {
   weekStart,
 } from "@/lib/time";
 import type { AsyncData } from "@/lib/useAsyncData";
+import { useLoadingGate } from "@/lib/useLoadingGate";
 import { courtColorCss } from "@/theme/courtColors";
 import type { Block } from "@/types/block";
 import type { Booking } from "@/types/booking";
@@ -43,6 +44,7 @@ export function CalendarPage() {
   const auth = useAuth();
   const settings = useCenterSettings();
   const courts = useCourts();
+  const gate = useLoadingGate(settings.status === "loading" || courts.status === "loading");
   if (auth.status !== "active") return null;
 
   const failed = settings.status === "error" ? settings : courts.status === "error" ? courts : null;
@@ -59,7 +61,10 @@ export function CalendarPage() {
       </Card>
     );
   }
-  if (settings.status !== "ready" || courts.status !== "ready") return <CalendarSkeleton />;
+  // Blank for the first moment, then Ace; the page is held back until he has been seen long enough
+  if (settings.status !== "ready" || courts.status !== "ready" || gate.busy) {
+    return gate.visible ? <AceLoadingState label="Loading the calendar…" /> : null;
+  }
 
   return (
     <CalendarContent
@@ -118,6 +123,8 @@ function CalendarContent({ settings, courts, uid, isAdmin }: CalendarContentProp
   const range = rangeFor(view, selectedDate);
   const bookings = useCalendarBookings(range.start, range.end, changes + createdElsewhere);
   const blocks = useCalendarBlocks(range.start, range.end, settings.timezone, changes);
+  // Moving to another month or week re-reads the bookings; Ace stands in for the grid while that takes a moment
+  const gridGate = useLoadingGate(bookings.status === "loading" || blocks.status === "loading");
 
   const byDate = useMemo(() => groupByDate(bookings.status === "ready" ? bookings.data : []), [bookings]);
   const blocksByDate = useMemo(
@@ -170,11 +177,9 @@ function CalendarContent({ settings, courts, uid, isAdmin }: CalendarContentProp
       )}
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17.5rem]">
-        <Card className="overflow-hidden">
-          {bookings.status === "loading" || blocks.status === "loading" ? (
-            <div role="status" aria-label="Loading the calendar" className="p-4">
-              <Skeleton className="h-[34rem] w-full" />
-            </div>
+        <Card className="overflow-hidden" data-tour="calendar-grid">
+          {gridGate.busy ? (
+            gridGate.visible ? <AceLoadingState layout="section" label="Loading the calendar…" /> : <div className="min-h-96" />
           ) : bookings.status === "error" ? (
             <ErrorMessage message={bookings.message} onRetry={bookings.retry} />
           ) : view === "month" ? (
@@ -278,18 +283,6 @@ function CalendarContent({ settings, courts, uid, isAdmin }: CalendarContentProp
           onDone={reload}
         />
       )}
-    </div>
-  );
-}
-
-function CalendarSkeleton() {
-  return (
-    <div className="space-y-4" role="status" aria-label="Loading the calendar">
-      <Skeleton className="h-9 w-96 max-w-full" />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17.5rem]">
-        <Card className="h-[38rem]" />
-        <Card className="h-56" />
-      </div>
     </div>
   );
 }

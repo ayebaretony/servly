@@ -3,14 +3,15 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useBookingsVersion } from "@/app/useBookingsVersion";
 import { useOpenNewBooking } from "@/app/useOpenNewBooking";
+import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { useToast } from "@/components/ui/useToast";
 import { useAuth } from "@/features/auth/useAuth";
 import { useCourts } from "@/features/courts/hooks/useCourts";
 import { useCenterSettings } from "@/features/settings/hooks/useCenterSettings";
+import { useLoadingGate } from "@/lib/useLoadingGate";
 import { todayInTimezone } from "@/lib/time";
 import type { Booking } from "@/types/booking";
 import type { Court } from "@/types/court";
@@ -31,6 +32,7 @@ export function BookingsPage() {
   const auth = useAuth();
   const settings = useCenterSettings();
   const courts = useCourts();
+  const gate = useLoadingGate(settings.status === "loading" || courts.status === "loading");
   if (auth.status !== "active") return null;
 
   const failed = settings.status === "error" ? settings : courts.status === "error" ? courts : null;
@@ -47,7 +49,10 @@ export function BookingsPage() {
       </Card>
     );
   }
-  if (settings.status !== "ready" || courts.status !== "ready") return <BookingsSkeleton />;
+  // Blank for the first moment, then Ace; the page is held back until he has been seen long enough
+  if (settings.status !== "ready" || courts.status !== "ready" || gate.busy) {
+    return gate.visible ? <AceLoadingState label="Loading bookings…" /> : null;
+  }
 
   return <BookingsContent settings={settings.data} courts={courts.data} isAdmin={auth.profile.role === "admin"} />;
 }
@@ -162,20 +167,6 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
       {isAdmin && dialog?.kind === "delete" && (
         <DeleteBookingModal booking={dialog.booking} settings={settings} today={today} onClose={closeDialog} onDone={refresh} />
       )}
-    </div>
-  );
-}
-
-function BookingsSkeleton() {
-  return (
-    <div className="space-y-6" role="status" aria-label="Loading bookings">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-80" />
-      </div>
-      <Card className="h-16" />
-      <Card className="h-20" />
-      <Card className="h-96" />
     </div>
   );
 }

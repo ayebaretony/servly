@@ -39,7 +39,7 @@ export function CourtsTable({
   const counts = todayBookings.status === "ready" ? countBookingsByCourt(todayBookings.data) : null;
 
   return (
-    <Card>
+    <Card data-tour="courts-table">
       <div className="flex flex-wrap items-start justify-between gap-4 p-6 pb-5">
         <div>
           <h2 className="type-h2">All courts</h2>

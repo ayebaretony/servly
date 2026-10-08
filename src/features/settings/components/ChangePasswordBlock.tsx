@@ -90,7 +90,7 @@ export function ChangePasswordBlock() {
           {formError}
         </p>
       )}
-      <Button type="submit" disabled={saving}>
+      <Button type="submit" loading={saving}>
         {saving ? "Saving…" : "Change password"}
       </Button>
     </form>
