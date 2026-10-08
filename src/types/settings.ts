@@ -17,3 +17,14 @@ export const DEFAULT_CENTER_SETTINGS: CenterSettings = {
   closeTime: "22:00",
   slotMinutes: 30,
 };
+
+// Shape of settings/security in Firestore. Applies to everyone who signs in.
+// 0 means "never sign out automatically". These are the only values the form offers and firestore.rules accepts.
+export const IDLE_TIMEOUT_OPTIONS = [15, 30, 60, 120, 0] as const;
+
+export type SecuritySettings = {
+  idleTimeoutMinutes: number;
+};
+
+// Used until an admin saves their own choice
+export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = { idleTimeoutMinutes: 60 };

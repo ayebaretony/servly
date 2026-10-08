@@ -1,13 +1,18 @@
+import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { PublicOnly, RequireAuth } from "@/features/auth/RouteGuards";
+import { PublicOnly, RequireAdmin, RequireAuth } from "@/features/auth/RouteGuards";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { SignUpPage } from "@/features/auth/SignUpPage";
-import { BookingsPage } from "@/features/bookings/BookingsPage";
-import { CalendarPage } from "@/features/calendar/CalendarPage";
-import { CourtsPage } from "@/features/courts/CourtsPage";
-import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { AppShell } from "./AppShell";
-import { PlaceholderPage } from "./PlaceholderPage";
+
+// Each page is downloaded the first time it is opened, not up front. This keeps the first load small
+// (the charts library alone is large and is only needed by the Dashboard and Revenue pages).
+const BookingsPage = lazy(() => import("@/features/bookings/BookingsPage").then((m) => ({ default: m.BookingsPage })));
+const CalendarPage = lazy(() => import("@/features/calendar/CalendarPage").then((m) => ({ default: m.CalendarPage })));
+const CourtsPage = lazy(() => import("@/features/courts/CourtsPage").then((m) => ({ default: m.CourtsPage })));
+const DashboardPage = lazy(() => import("@/features/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const RevenuePage = lazy(() => import("@/features/revenue/RevenuePage").then((m) => ({ default: m.RevenuePage })));
+const SettingsPage = lazy(() => import("@/features/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 
 export function App() {
   return (
@@ -34,11 +39,12 @@ export function App() {
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
-          {/* Placeholders until Phase 6 */}
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/courts" element={<CourtsPage />} />
-          <Route path="/revenue" element={<PlaceholderPage name="Revenue" />} />
-          <Route path="/settings" element={<PlaceholderPage name="Settings" />} />
+          <Route path="/revenue" element={<RevenuePage />} />
+          <Route element={<RequireAdmin />}>
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
         </Route>
       </Route>
 

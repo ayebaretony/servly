@@ -8,7 +8,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type NavItem = { to: string; label: string; icon: LucideIcon };
+// adminOnly links are hidden from staff (the route itself is also guarded)
+export type NavItem = { to: string; label: string; icon: LucideIcon; adminOnly?: boolean };
 
 // Order matches the sidebar in the design (AGENTS.md section 5)
 export const NAV_ITEMS: NavItem[] = [
@@ -17,5 +18,5 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/bookings", label: "Bookings", icon: ClipboardList },
   { to: "/courts", label: "Courts", icon: RectangleHorizontal },
   { to: "/revenue", label: "Revenue", icon: ChartNoAxesColumn },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/settings", label: "Settings", icon: Settings, adminOnly: true },
 ];

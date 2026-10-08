@@ -7,11 +7,11 @@ const STATUS_LABEL = { confirmed: "Confirmed", pending: "Pending", cancelled: "C
 
 // A cell starting with = + - or @ is run as a formula when the file is opened in Excel or Sheets. Customer details are
 // typed by people, so text cells get a leading apostrophe to keep them as plain text.
-function textCell(value: string): string {
+export function textCell(value: string): string {
   return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 }
 
-function csvField(value: string): string {
+export function csvField(value: string): string {
   return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 

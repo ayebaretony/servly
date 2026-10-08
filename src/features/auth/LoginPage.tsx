@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -6,6 +6,7 @@ import { AuthLayout } from "./AuthLayout";
 import { friendlyAuthError, sendPasswordReset, signInWithEmail, signInWithGoogle } from "./auth.service";
 import { GoogleIcon } from "./GoogleIcon";
 import { PasswordToggle } from "./PasswordToggle";
+import { clearSignOutNotice, peekSignOutNotice } from "./sessionNotice";
 import { EMAIL_PATTERN } from "./validation";
 
 type FormErrors = { email?: string; password?: string };
@@ -25,8 +26,12 @@ export function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  // Set when the app signed this person out by itself (inactivity, access removed)
+  const [notice, setNotice] = useState<string | null>(peekSignOutNotice);
   const [busy, setBusy] = useState(false);
+
+  // Read above and cleared here, because React may run a state initializer twice in development
+  useEffect(() => clearSignOutNotice(), []);
 
   // Runs a sign-in action with the shared busy/error handling. On success the auth guard moves the user on.
   async function run(action: () => Promise<void>) {

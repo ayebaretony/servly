@@ -1,7 +1,9 @@
 import { Bell, Menu, Plus, Search } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { splitUsers } from "@/features/settings/users.logic";
+import { useUsers } from "@/features/settings/useUsers";
 import { NAV_ITEMS } from "./navItems";
 import { useOpenNewBooking } from "./useOpenNewBooking";
 
@@ -10,6 +12,9 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const navigate = useNavigate();
   const openNewBooking = useOpenNewBooking();
   const [term, setTerm] = useState("");
+  // Only the admin has a user list (status "off" for staff)
+  const users = useUsers();
+  const waiting = users.status === "ready" ? splitUsers(users.users).requests.length : 0;
 
   const title = NAV_ITEMS.find((item) => pathname.startsWith(item.to))?.label ?? "Servly";
 
@@ -49,13 +54,32 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
           />
         </form>
 
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="focus-ring grid size-9 place-items-center rounded-button text-muted transition-colors hover:bg-sidebar hover:text-ink"
-        >
-          <Bell aria-hidden="true" className="size-[18px]" />
-        </button>
+        {users.status === "off" ? (
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="focus-ring grid size-9 place-items-center rounded-button text-muted transition-colors hover:bg-sidebar hover:text-ink"
+          >
+            <Bell aria-hidden="true" className="size-[18px]" />
+          </button>
+        ) : (
+          // For the admin the bell leads to the people waiting for approval
+          <Link
+            to="/settings"
+            aria-label={waiting > 0 ? `Notifications: ${waiting} waiting for approval` : "Notifications: nothing new"}
+            className="focus-ring relative grid size-9 place-items-center rounded-button text-muted transition-colors hover:bg-sidebar hover:text-ink"
+          >
+            <Bell aria-hidden="true" className="size-[18px]" />
+            {waiting > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-pill bg-danger px-1 text-[10px] font-bold leading-4 text-white"
+              >
+                {waiting}
+              </span>
+            )}
+          </Link>
+        )}
 
         <Button onClick={openNewBooking}>
           <Plus aria-hidden="true" className="size-4" />

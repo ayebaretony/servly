@@ -46,15 +46,22 @@ service cloud.firestore {
         && request.resource.data.active == false
         && request.resource.data.createdAt == request.time;
 
-      // Admins approve/deactivate and change roles, but never their own (so the last admin can't lock themselves out).
-      // Regular users cannot update anything, including their own role.
+      // The admin approves, suspends and reactivates STAFF (never themselves, never another admin).
+      // Only `active` and `approvedAt` can change: nobody's role can be changed from the app, so nobody can be
+      // promoted to admin (the first admin is created by hand in the Firebase console).
+      // approvedAt, when written, must be the server's own clock, so it can't be faked.
       allow update: if isAdmin()
         && request.auth.uid != uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'active'])
-        && request.resource.data.role in ['admin', 'staff']
-        && request.resource.data.active is bool;
+        && resource.data.role == 'staff'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'approvedAt'])
+        && request.resource.data.active is bool
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['approvedAt'])
+            || request.resource.data.approvedAt == request.time);
 
-      allow delete: if false;
+      // The admin can remove staff (someone who left) or decline a request. Never themselves or another admin.
+      allow delete: if isAdmin()
+        && request.auth.uid != uid
+        && resource.data.role == 'staff';
     }
 
     // ---------- courts ----------
@@ -175,6 +182,17 @@ service cloud.firestore {
         && request.resource.data.closeTime.matches('^[0-2][0-9]:[0-5][0-9]$')
         && request.resource.data.slotMinutes is int
         && request.resource.data.slotMinutes > 0;
+      allow delete: if false;
+    }
+
+    // ---------- security settings (settings/security) ----------
+    // How long someone can be inactive before they are signed out automatically. Everyone reads it (the app needs it
+    // to sign them out); only the admin writes it, and only with one of the values the Settings screen offers (0 = never).
+    match /settings/security {
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['idleTimeoutMinutes'])
+        && request.resource.data.idleTimeoutMinutes is int
+        && request.resource.data.idleTimeoutMinutes in [0, 15, 30, 60, 120];
       allow delete: if false;
     }
 
