@@ -1,13 +1,16 @@
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   browserLocalPersistence,
   browserSessionPersistence,
   createUserWithEmailAndPassword,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updatePassword,
   updateProfile,
   type User,
 } from "firebase/auth";
@@ -51,6 +54,48 @@ export function sendPasswordReset(email: string) {
 
 export function signOutUser() {
   return signOut(auth);
+}
+
+// Google accounts have no password in Servly: Google manages it
+export function canChangePassword(): boolean {
+  return !!auth.currentUser?.providerData.some((provider) => provider.providerId === "password");
+}
+
+// Firebase wants the current password again before it changes a password, so a stolen open session can't lock the owner out
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const user = auth.currentUser;
+  if (!user?.email) throw new Error("Not signed in.");
+  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, currentPassword));
+  await updatePassword(user, newPassword);
+}
+
+export function friendlyPasswordChangeError(error: unknown): string {
+  const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+      return "Your current password isn't right.";
+    case "auth/weak-password":
+      return "Choose a stronger password (at least 8 characters).";
+    case "auth/too-many-requests":
+      return "Too many attempts. Wait a few minutes and try again.";
+    case "auth/requires-recent-login":
+      return "For your security, sign out and sign in again, then change your password.";
+    case "auth/network-request-failed":
+      return "Can't reach the server. Check your internet connection and try again.";
+    default:
+      return "We couldn't change your password. Please try again.";
+  }
+}
+
+// Is this person still allowed in? Checked now and then while the app is open, so removing or suspending someone
+// takes effect on screens that are already open (the security rules already refuse their data straight away).
+export type AccessStatus = "approved" | "suspended" | "removed";
+
+export async function checkAccess(uid: string): Promise<AccessStatus> {
+  const snapshot = await getDoc(doc(db, "users", uid));
+  if (!snapshot.exists()) return "removed";
+  return readProfile(snapshot.data())?.active ? "approved" : "suspended";
 }
 
 function isUserProfile(data: Record<string, unknown> | undefined): data is UserProfile {

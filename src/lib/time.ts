@@ -98,6 +98,11 @@ export function formatShortDate(date: string): string {
   return format(localDate(date), "EEE, MMM d");
 }
 
+// "Jun 18"
+export function formatMonthDay(date: string): string {
+  return format(localDate(date), "MMM d");
+}
+
 // "Jun 18", or "Jun 18, 2024" when the date is not in the same year as `today`
 export function formatDayLabel(date: string, today: string): string {
   const sameYear = date.slice(0, 4) === today.slice(0, 4);

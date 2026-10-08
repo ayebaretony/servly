@@ -7,3 +7,12 @@ export type UserProfile = {
   role: UserRole;
   active: boolean;
 };
+
+// A users/{uid} document as the admin sees it in Settings.
+// approvedAt is set the first time an admin approves the account, which is how "never approved" (a new request)
+// is told apart from "approved before, now suspended".
+export type ManagedUser = UserProfile & {
+  id: string;
+  createdAt: Date | null;
+  approvedAt: Date | null;
+};

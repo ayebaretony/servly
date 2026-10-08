@@ -23,6 +23,14 @@ export function RequireAuth() {
   }
 }
 
+// Settings is for the admin only. Staff who type the address by hand are sent back to the dashboard.
+// Goes inside RequireAuth, which has already dealt with signed-out, pending and error states.
+export function RequireAdmin() {
+  const auth = useAuth();
+  if (auth.status !== "active") return null;
+  return auth.profile.role === "admin" ? <Outlet /> : <Navigate to="/dashboard" replace />;
+}
+
 // Wraps Login and Sign up: someone who is already signed in goes straight into the app.
 export function PublicOnly({ children }: { children: ReactNode }) {
   const auth = useAuth();

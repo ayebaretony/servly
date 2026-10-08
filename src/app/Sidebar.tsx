@@ -16,6 +16,7 @@ type SidebarProps = {
 export function Sidebar({ onNavigate, onClose }: SidebarProps) {
   const auth = useAuth();
   const profile = auth.status === "active" ? auth.profile : null;
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || profile?.role === "admin");
 
   return (
     <div className="flex h-full flex-col border-r bg-sidebar">
@@ -35,7 +36,7 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
 
       <nav aria-label="Main" className="flex-1 px-3 pt-4">
         <ul className="space-y-1">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {items.map(({ to, label, icon: Icon }) => (
             <li key={to}>
               <NavLink
                 to={to}

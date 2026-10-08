@@ -3,6 +3,8 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import type { UserProfile } from "@/types/user";
 import { AuthContext, type AuthContextValue, type AuthState } from "./AuthContext";
+import { fetchCourts } from "@/features/courts/courts.service";
+import { fetchCenterSettings } from "@/features/settings/settings.service";
 import { loadProfile } from "./auth.service";
 
 // The answer to "is this person approved?" for one specific sign-in (`user`) and one check (`attempt`)
@@ -18,6 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!firebaseUser) return;
+
+    // Start loading the courts and settings now, alongside the approval check, instead of after it. Every page needs
+    // them, and they are cached, so the page finds them ready. If the person turns out not to be approved the read
+    // is refused and nothing is cached; the error is ignored here and shown by the page if it is ever needed.
+    void fetchCenterSettings().catch(() => undefined);
+    void fetchCourts().catch(() => undefined);
 
     // Ignore the answer if the user signed out or a newer check started while we were waiting
     let cancelled = false;

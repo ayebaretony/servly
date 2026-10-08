@@ -1,17 +1,28 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { ToastProvider } from "@/components/ui/ToastProvider";
+import { useAuth } from "@/features/auth/useAuth";
+import { UsersProvider } from "@/features/settings/UsersProvider";
 import { BookingModalProvider } from "./BookingModalProvider";
+import { SessionGuard } from "./SessionGuard";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 // Sidebar + top bar around every signed-in page, plus the toasts and the "New booking" pop-up that any page can use.
+// The admin also gets a live list of users here, so a new sign-up request is announced on whatever page they are on.
 export function AppShell() {
+  const auth = useAuth();
+  const isAdmin = auth.status === "active" && auth.profile.role === "admin";
+
   return (
     <ToastProvider>
-      <BookingModalProvider>
-        <ShellLayout />
-      </BookingModalProvider>
+      <UsersProvider enabled={isAdmin}>
+        <BookingModalProvider>
+          <SessionGuard />
+          <ShellLayout />
+        </BookingModalProvider>
+      </UsersProvider>
     </ToastProvider>
   );
 }
@@ -54,7 +65,10 @@ function ShellLayout() {
       <div className="lg:pl-56">
         <Topbar onOpenMenu={() => setDrawerOpen(true)} />
         <main className="px-4 py-6 sm:px-8">
-          <Outlet />
+          {/* The sidebar and top bar stay on screen while a page's code downloads */}
+          <Suspense fallback={<div className="space-y-4" role="status" aria-label="Loading page"><Skeleton className="h-8 w-64" /><Skeleton className="h-64 w-full" /></div>}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
