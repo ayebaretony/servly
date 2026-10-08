@@ -1,0 +1,82 @@
+/*
+ * Ace, the Servly mascot (loading animation).
+ * Every class and keyframe here starts with `ace-` so nothing can clash with the rest of the app.
+ * The first block (poses + keyframes) is the mascot spec as supplied; the rest is layout around it.
+ */
+
+.ace g, .ace path, .ace circle, .ace ellipse, .ace line, .ace rect { transform-box: view-box; }
+.ace-bounce { transform-origin: 100px 212px; animation: ace-bounce .9s cubic-bezier(.45,0,.55,1) infinite; }
+@keyframes ace-bounce {
+  0%,100% { transform: translateY(0) scale(1.07,.93); }
+  12%     { transform: translateY(-6px) scale(.96,1.04); }
+  50%     { transform: translateY(-44px) scale(1,1); }
+  88%     { transform: translateY(-6px) scale(.97,1.03); }
+}
+.ace-shadow { transform-origin: 100px 214px; animation: ace-shadow .9s cubic-bezier(.45,0,.55,1) infinite; }
+@keyframes ace-shadow { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.6); opacity: .5; } }
+.ace-spin { transform-origin: 100px 100px; animation: ace-spin .8s linear infinite; }
+@keyframes ace-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Tour poses (idle, wave, point, walk, celebrate) ---------- */
+
+.ace .ace-conf { transform-box: fill-box; transform-origin: center; animation: ace-conf 1.8s ease-in infinite; opacity: 0; }
+.ace-breathe { transform-origin: 100px 212px; animation: ace-breathe 4s ease-in-out infinite; }
+@keyframes ace-breathe { 0%,100% { transform: scale(1,1); } 50% { transform: scale(1.015,1.03); } }
+.ace-blink { transform-origin: 100px 100px; animation: ace-blink 4s infinite; }
+@keyframes ace-blink { 0%,90%,100% { transform: scaleY(1); } 93% { transform: scaleY(.1); } 96% { transform: scaleY(1); } }
+.ace-wave { transform-origin: 160px 96px; animation: ace-wave 1.6s ease-in-out infinite; }
+@keyframes ace-wave { 0%,100% { transform: rotate(0); } 15%,45% { transform: rotate(-22deg); } 30% { transform: rotate(12deg); } 60% { transform: rotate(8deg); } 75% { transform: rotate(0); } }
+.ace-nudge { animation: ace-nudge 1.2s ease-in-out infinite; }
+@keyframes ace-nudge { 0%,100% { transform: translateX(0); } 50% { transform: translateX(7px); } }
+.ace-leg-l { transform-origin: 86px 166px; animation: ace-step .5s ease-in-out infinite alternate; }
+.ace-leg-r { transform-origin: 114px 166px; animation: ace-step .5s ease-in-out infinite alternate-reverse; }
+@keyframes ace-step { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+.ace-walk-bob { animation: ace-bob .25s ease-in-out infinite alternate; }
+@keyframes ace-bob { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+.ace-jump { transform-origin: 100px 212px; animation: ace-jump 1.8s ease-in-out infinite; }
+@keyframes ace-jump { 0%,100% { transform: translateY(0) scale(1.06,.94); } 18%,54% { transform: translateY(-28px) scale(.96,1.04); } 36% { transform: translateY(0) scale(1.06,.94); } 72% { transform: translateY(0) scale(1.03,.97); } 86% { transform: none; } }
+@keyframes ace-conf { 0% { transform: translateY(0) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(220px) rotate(360deg); opacity: 0; } }
+
+/* A pose that plays a single time (the tour's finish): one hop, one shower of confetti */
+.ace--once .ace-jump, .ace--once .ace-conf { animation-iteration-count: 1; }
+
+@media (prefers-reduced-motion: reduce) { .ace * { animation: none !important; } }
+
+/* ---------- Layout around Ace ---------- */
+
+/* At the top of a hop the ball is above the drawing's top edge; without this the headband would be cut off */
+.ace { display: block; flex-shrink: 0; overflow: visible; }
+
+/* Ace + caption. A span (not a div) so it is valid inside a <button>. */
+.ace-loader {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Room above a full-body Ace for the top of his hop (44 of the drawing's 230 units, in pixels) */
+.ace-loader--bounce { padding-top: calc(var(--ace-size) * 0.2); }
+
+/* Speech-bubble text in the welcome tour: DM Sans 14px in the ink colour */
+.ace-bubble { font-family: "DM Sans", var(--font-sans); font-size: 0.875rem; line-height: 1.25rem; color: var(--color-ink); }
+
+/* Caption under Ace: DM Sans 14px in the muted colour */
+.ace-label {
+  font-family: "DM Sans", var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* Centres Ace on the page background. "screen" = whole window, "page" = inside the app shell, "section" = inside a card. */
+.ace-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.ace-state--screen { min-height: 100vh; background-color: var(--color-page); }
+.ace-state--page { min-height: 60vh; background-color: var(--color-page); }
+.ace-state--section { min-height: 24rem; }

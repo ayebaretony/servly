@@ -1,19 +1,20 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { useAuth } from "@/features/auth/useAuth";
 import { useTodayBookings } from "@/features/dashboard/hooks/useTodayBookings";
 import { useCenterSettings } from "@/features/settings/hooks/useCenterSettings";
 import { todayInTimezone } from "@/lib/time";
+import { useLoadingGate } from "@/lib/useLoadingGate";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
 import { BlockTimeModal } from "@/features/calendar/components/BlockTimeModal";
 import { ArchiveCourtModal } from "./components/ArchiveCourtModal";
 import { CourtFormModal } from "./components/CourtFormModal";
-import { CourtStats, CourtStatsSkeleton } from "./components/CourtStats";
+import { CourtStats } from "./components/CourtStats";
 import { CourtsTable, type StatusFilter } from "./components/CourtsTable";
 import { QuickActions } from "./components/QuickActions";
 import { TodayAvailability } from "./components/TodayAvailability";
@@ -24,6 +25,7 @@ export function CourtsPage() {
   const auth = useAuth();
   const settings = useCenterSettings();
   const { courts, reload } = useCourtList();
+  const gate = useLoadingGate(settings.status === "loading" || courts.status === "loading");
   if (auth.status !== "active") return null;
 
   const failed = settings.status === "error" ? settings : courts.status === "error" ? courts : null;
@@ -40,7 +42,10 @@ export function CourtsPage() {
       </Card>
     );
   }
-  if (settings.status !== "ready" || courts.status !== "ready") return <CourtsSkeleton />;
+  // Blank for the first moment, then Ace; the page is held back until he has been seen long enough
+  if (settings.status !== "ready" || courts.status !== "ready" || gate.busy) {
+    return gate.visible ? <AceLoadingState label="Loading courts…" /> : null;
+  }
 
   return (
     <CourtsContent
@@ -115,23 +120,6 @@ function CourtsContent({ courts, settings, uid, canManage, onChanged }: CourtsCo
         <BlockTimeModal courts={courts} settings={settings} uid={uid} onClose={closeDialog} onSaved={() => undefined} />
       )}
       {dialog?.kind === "archive" && <ArchiveCourtModal court={dialog.court} onClose={closeDialog} onArchived={onChanged} />}
-    </div>
-  );
-}
-
-function CourtsSkeleton() {
-  return (
-    <div className="space-y-6" role="status" aria-label="Loading courts">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-80" />
-      </div>
-      <CourtStatsSkeleton />
-      <Card className="h-72" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="h-40" />
-        <Card className="h-40" />
-      </div>
     </div>
   );
 }

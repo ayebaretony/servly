@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { useAuth } from "@/features/auth/useAuth";
+import { useLoadingGate } from "@/lib/useLoadingGate";
 import type { ManagedUser } from "@/types/user";
 import { AccessRequests } from "./components/AccessRequests";
 import { ConfirmUserActionModal, type UserAction } from "./components/ConfirmUserActionModal";
@@ -18,6 +19,7 @@ export function SettingsPage() {
   const auth = useAuth();
   const users = useUsers();
   const settings = useCenterSettings();
+  const gate = useLoadingGate(users.status === "loading" || settings.status === "loading");
   if (auth.status !== "active") return null;
 
   const failed = users.status === "error" ? users : settings.status === "error" ? settings : null;
@@ -34,7 +36,10 @@ export function SettingsPage() {
       </Card>
     );
   }
-  if (users.status !== "ready" || settings.status !== "ready") return <SettingsSkeleton />;
+  // Blank for the first moment, then Ace; the page is held back until he has been seen long enough
+  if (users.status !== "ready" || settings.status !== "ready" || gate.busy) {
+    return gate.visible ? <AceLoadingState label="Loading settings…" /> : null;
+  }
 
   return <SettingsContent users={users.users} uid={auth.uid} timezone={settings.data.timezone} />;
 }
@@ -57,20 +62,6 @@ function SettingsContent({ users, uid, timezone }: { users: ManagedUser[]; uid: 
       <SecuritySection />
 
       {dialog && <ConfirmUserActionModal action={dialog.action} user={dialog.user} onClose={() => setDialog(null)} />}
-    </div>
-  );
-}
-
-function SettingsSkeleton() {
-  return (
-    <div className="space-y-6" role="status" aria-label="Loading settings">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-72" />
-      </div>
-      <Card className="h-40" />
-      <Card className="h-64" />
-      <Card className="h-72" />
     </div>
   );
 }

@@ -382,7 +382,7 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Cancel
         </Button>
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" loading={saving}>
           {saving ? "Creating…" : "Create booking"}
         </Button>
       </ModalFooter>

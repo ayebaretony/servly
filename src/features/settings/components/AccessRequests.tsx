@@ -74,7 +74,7 @@ export function AccessRequests({ requests, timezone, onDecline }: AccessRequests
                   <X aria-hidden="true" className="size-4" />
                   Decline
                 </Button>
-                <Button onClick={() => void approve(user)} disabled={approvingId !== null} aria-label={`Approve ${user.displayName}`}>
+                <Button onClick={() => void approve(user)} loading={approvingId === user.id} disabled={approvingId !== null} aria-label={`Approve ${user.displayName}`}>
                   <Check aria-hidden="true" className="size-4" />
                   {approvingId === user.id ? "Approving…" : "Approve"}
                 </Button>

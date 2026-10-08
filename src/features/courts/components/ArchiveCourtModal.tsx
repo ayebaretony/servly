@@ -49,7 +49,7 @@ export function ArchiveCourtModal({ court, onClose, onArchived }: ArchiveCourtMo
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Cancel
         </Button>
-        <Button variant="danger" onClick={() => void confirm()} disabled={saving}>
+        <Button variant="danger" onClick={() => void confirm()} loading={saving}>
           {saving ? "Archiving…" : "Archive court"}
         </Button>
       </ModalFooter>

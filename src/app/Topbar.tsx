@@ -81,7 +81,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
           </Link>
         )}
 
-        <Button onClick={openNewBooking}>
+        <Button onClick={openNewBooking} data-tour="new-booking">
           <Plus aria-hidden="true" className="size-4" />
           New booking
         </Button>

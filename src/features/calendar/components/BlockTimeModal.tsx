@@ -197,7 +197,7 @@ export function BlockTimeModal({ courts, settings, uid, initialDate, onClose, on
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" loading={saving}>
             {saving ? "Blocking…" : "Block time"}
           </Button>
         </ModalFooter>

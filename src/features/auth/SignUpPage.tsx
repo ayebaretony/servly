@@ -95,7 +95,7 @@ export function SignUpPage() {
           </p>
         )}
 
-        <Button type="submit" className="w-full" disabled={busy}>
+        <Button type="submit" className="w-full" loading={busy}>
           {busy ? "Creating account…" : "Create account"}
         </Button>
       </form>

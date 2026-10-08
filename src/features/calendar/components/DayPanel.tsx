@@ -1,7 +1,6 @@
 import { Wrench } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyMessage } from "@/components/ui/StateMessages";
 import { formatMoney } from "@/lib/money";
 import { formatTimeRange, formatWeekdayDate } from "@/lib/time";
@@ -45,19 +44,11 @@ export function DayPanel({
         {summary
           ? `${summary.count} ${summary.count === 1 ? "booking" : "bookings"} · ${formatMoney(summary.revenueMinor, settings.currency)} revenue`
           : bookings.status === "loading"
-            ? "Loading…"
+            ? "\u00a0" // the calendar next to this panel is showing Ace; one is enough
             : "Bookings unavailable"}
       </p>
 
       <div className="mt-4">
-        {bookings.status === "loading" && (
-          <div role="status" aria-label="Loading this day's bookings" className="space-y-3">
-            {[0, 1, 2].map((n) => (
-              <Skeleton key={n} className="h-12 w-full" />
-            ))}
-          </div>
-        )}
-
         {bookings.status === "error" && (
           // The calendar itself shows the error and the retry button
           <p className="text-xs text-muted">Try again from the calendar to see this day.</p>

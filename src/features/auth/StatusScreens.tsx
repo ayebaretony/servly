@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Button } from "@/components/ui/Button";
 import { BrandMark } from "./BrandMark";
 import { signOutUser } from "./auth.service";
@@ -13,21 +14,9 @@ function CenteredCard({ children }: { children: ReactNode }) {
   );
 }
 
-// Shown while Firebase works out who is signed in. A skeleton card, so the page doesn't jump when it loads.
+// Shown while Firebase works out who is signed in. The guards decide when to show it (see useLoadingGate), so it doesn't flash.
 export function LoadingScreen() {
-  return (
-    <main
-      className="flex min-h-screen flex-col items-center justify-center gap-6 bg-page px-4"
-      role="status"
-      aria-label="Loading"
-    >
-      <BrandMark />
-      <div className="card w-full max-w-md animate-pulse space-y-3 p-8" aria-hidden="true">
-        <div className="mx-auto h-5 w-2/3 rounded-chip bg-border" />
-        <div className="mx-auto h-4 w-1/2 rounded-chip bg-border" />
-      </div>
-    </main>
-  );
+  return <AceLoadingState layout="screen" size="lg" />;
 }
 
 // Signed in, but the profile couldn't be loaded

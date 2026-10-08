@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { useAuth } from "@/features/auth/useAuth";
 import { useCourts } from "@/features/courts/hooks/useCourts";
 import { useCenterSettings } from "@/features/settings/hooks/useCenterSettings";
+import { useLoadingGate } from "@/lib/useLoadingGate";
 import { formatLongDate, hourInTimezone, todayInTimezone } from "@/lib/time";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
@@ -26,6 +27,7 @@ export function DashboardPage() {
   const auth = useAuth();
   const settings = useCenterSettings();
   const courts = useCourts();
+  const gate = useLoadingGate(settings.status === "loading" || courts.status === "loading");
   if (auth.status !== "active") return null;
 
   const failed = settings.status === "error" ? settings : courts.status === "error" ? courts : null;
@@ -42,7 +44,10 @@ export function DashboardPage() {
       </Card>
     );
   }
-  if (settings.status !== "ready" || courts.status !== "ready") return <DashboardSkeleton />;
+  // Blank for the first moment, then Ace; the page is held back until he has been seen long enough
+  if (settings.status !== "ready" || courts.status !== "ready" || gate.busy) {
+    return gate.visible ? <AceLoadingState label="Loading your dashboard…" /> : null;
+  }
 
   return <DashboardContent firstName={auth.profile.displayName.split(" ")[0]} settings={settings.data} courts={courts.data} />;
 }
@@ -65,7 +70,9 @@ function DashboardContent({ firstName, settings, courts }: { firstName: string; 
         </h1>
       </div>
 
-      <StatCards today={today} todayBookings={todayBookings} history={history} courts={courts} settings={settings} />
+      <div data-tour="dashboard-stats">
+        <StatCards today={today} todayBookings={todayBookings} history={history} courts={courts} settings={settings} />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
         <TodayGlance today={today} todayBookings={todayBookings} courts={courts} settings={settings} />
@@ -73,23 +80,6 @@ function DashboardContent({ firstName, settings, courts }: { firstName: string; 
       </div>
 
       <RecentBookings recent={recent} settings={settings} />
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-6" role="status" aria-label="Loading dashboard">
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-8 w-64" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((n) => (
-          <Card key={n} className="h-[118px]" />
-        ))}
-      </div>
-      <Card className="h-80" />
     </div>
   );
 }

@@ -130,7 +130,7 @@ export function LoginPage() {
           </p>
         )}
 
-        <Button type="submit" className="w-full" disabled={busy}>
+        <Button type="submit" className="w-full" loading={busy}>
           {busy ? "Please wait…" : "Sign in"}
         </Button>
       </form>

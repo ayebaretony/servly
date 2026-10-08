@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useLoadingGate } from "@/lib/useLoadingGate";
 import { ApprovalPendingScreen, LoadingScreen, ProfileErrorScreen } from "./StatusScreens";
 import { useAuth } from "./useAuth";
 
@@ -7,10 +8,13 @@ import { useAuth } from "./useAuth";
 export function RequireAuth() {
   const auth = useAuth();
   const location = useLocation();
+  // Blank until the check has taken a moment, then Ace; held briefly so he doesn't flash
+  const gate = useLoadingGate(auth.status === "loading");
+  if (gate.busy) return gate.visible ? <LoadingScreen /> : null;
 
   switch (auth.status) {
     case "loading":
-      return <LoadingScreen />;
+      return null; // unreachable: the gate above is busy whenever auth is loading
     case "signedOut":
       // Remember where they were heading so sign-in can send them back
       return <Navigate to="/login" replace state={{ from: location.pathname }} />;
@@ -35,8 +39,10 @@ export function RequireAdmin() {
 export function PublicOnly({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const location = useLocation();
+  const gate = useLoadingGate(auth.status === "loading");
 
-  if (auth.status === "loading") return <LoadingScreen />;
+  if (gate.busy) return gate.visible ? <LoadingScreen /> : null;
+  if (auth.status === "loading") return null; // unreachable: the gate above is busy whenever auth is loading
   if (auth.status === "signedOut") return children;
 
   const from = (location.state as { from?: string } | null)?.from;

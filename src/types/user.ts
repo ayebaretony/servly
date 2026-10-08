@@ -6,6 +6,8 @@ export type UserProfile = {
   email: string;
   role: UserRole;
   active: boolean;
+  // Set when the person finishes or skips the welcome tour. Missing = never seen it.
+  onboarding?: { tourVersion: number };
 };
 
 // A users/{uid} document as the admin sees it in Settings.

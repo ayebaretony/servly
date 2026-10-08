@@ -1,8 +1,9 @@
-import { LogOut, User, X } from "lucide-react";
+import { CircleHelp, LogOut, User, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { BrandMark } from "@/features/auth/BrandMark";
 import { signOutUser } from "@/features/auth/auth.service";
 import { useAuth } from "@/features/auth/useAuth";
+import { useTour } from "@/features/tour/useTour";
 import { NAV_ITEMS } from "./navItems";
 
 const ROLE_LABEL = { admin: "Admin", staff: "Staff" } as const;
@@ -15,6 +16,7 @@ type SidebarProps = {
 
 export function Sidebar({ onNavigate, onClose }: SidebarProps) {
   const auth = useAuth();
+  const { startTour } = useTour();
   const profile = auth.status === "active" ? auth.profile : null;
   const items = NAV_ITEMS.filter((item) => !item.adminOnly || profile?.role === "admin");
 
@@ -54,6 +56,20 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
           ))}
         </ul>
       </nav>
+
+      <div className="px-3 pb-2">
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate(); // closes the drawer on phones
+            startTour();
+          }}
+          className="focus-ring flex min-h-11 w-full items-center gap-3 rounded-button px-3 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-ink"
+        >
+          <CircleHelp aria-hidden="true" className="size-[18px]" />
+          Replay tour
+        </button>
+      </div>
 
       {profile && (
         <div className="flex items-center gap-3 border-t px-4 py-4">

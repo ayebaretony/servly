@@ -1,9 +1,9 @@
 import { CalendarDays, ChevronDown, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useOpenNewBooking } from "@/app/useOpenNewBooking";
+import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyMessage, ErrorMessage } from "@/components/ui/StateMessages";
 import { useToast } from "@/components/ui/useToast";
 import { useAuth } from "@/features/auth/useAuth";
@@ -11,6 +11,7 @@ import { downloadCsv } from "@/features/bookings/bookings.export";
 import { useCourts } from "@/features/courts/hooks/useCourts";
 import { useCenterSettings } from "@/features/settings/hooks/useCenterSettings";
 import { addMonths, formatMonthYear, monthStart, previousMonthStart, todayInTimezone } from "@/lib/time";
+import { useLoadingGate } from "@/lib/useLoadingGate";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
 import { BookingStatusCard } from "./components/BookingStatusCard";
@@ -31,6 +32,7 @@ export function RevenuePage() {
   const auth = useAuth();
   const settings = useCenterSettings();
   const courts = useCourts();
+  const gate = useLoadingGate(settings.status === "loading" || courts.status === "loading");
   if (auth.status !== "active") return null;
 
   const failed = settings.status === "error" ? settings : courts.status === "error" ? courts : null;
@@ -47,7 +49,10 @@ export function RevenuePage() {
       </Card>
     );
   }
-  if (settings.status !== "ready" || courts.status !== "ready") return <RevenueSkeleton />;
+  // Blank for the first moment, then Ace; the page is held back until he has been seen long enough
+  if (settings.status !== "ready" || courts.status !== "ready" || gate.busy) {
+    return gate.visible ? <AceLoadingState label="Loading revenue…" /> : null;
+  }
 
   return <RevenueContent settings={settings.data} courts={courts.data} />;
 }
@@ -156,19 +161,6 @@ function RevenueBodySkeleton() {
         <Card className="h-80" />
       </div>
       <Card className="h-72" />
-    </div>
-  );
-}
-
-function RevenueSkeleton() {
-  return (
-    <div className="space-y-6" role="status" aria-label="Loading revenue">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-4 w-80" />
-      </div>
-      <RevenueStatCardsSkeleton />
-      <Card className="h-80" />
     </div>
   );
 }

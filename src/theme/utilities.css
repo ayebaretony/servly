@@ -95,6 +95,12 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  /* Busy (Ace is spinning inside): stay at full strength so Ace keeps his colours, and show it is working rather than blocked */
+  &[aria-busy="true"]:disabled {
+    opacity: 1;
+    cursor: progress;
+  }
 }
 
 /* Solid navy, e.g. "+ New booking" */

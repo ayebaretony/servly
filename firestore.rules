@@ -58,6 +58,18 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['approvedAt'])
             || request.resource.data.approvedAt == request.time);
 
+      // Anyone approved can record, on their own profile, that they have seen the welcome tour. That one field only:
+      // role and active stay out of reach, and completedAt must be the server's own clock.
+      allow update: if isActive()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['onboarding'])
+        && request.resource.data.onboarding is map
+        && request.resource.data.onboarding.keys().hasOnly(['tourVersion', 'completedAt'])
+        && request.resource.data.onboarding.keys().hasAll(['tourVersion', 'completedAt'])
+        && request.resource.data.onboarding.tourVersion is int
+        && request.resource.data.onboarding.tourVersion >= 1
+        && request.resource.data.onboarding.completedAt == request.time;
+
       // The admin can remove staff (someone who left) or decline a request. Never themselves or another admin.
       allow delete: if isAdmin()
         && request.auth.uid != uid

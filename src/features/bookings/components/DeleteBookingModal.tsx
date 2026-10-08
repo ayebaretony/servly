@@ -61,7 +61,7 @@ export function DeleteBookingModal({ booking, settings, today, onClose, onDone }
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Keep booking
         </Button>
-        <Button variant="danger" onClick={() => void confirm()} disabled={saving}>
+        <Button variant="danger" onClick={() => void confirm()} loading={saving}>
           {saving ? "Deleting…" : "Delete booking"}
         </Button>
       </ModalFooter>
