@@ -1,16 +1,35 @@
-The MIT License (MIT)
+Servly Proprietary License
 
-Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)
+Copyright (c) 2026 Tony Ayebare. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and its associated documentation, designs, logos, and other
+files (the "Software") are the property of the copyright holder.
 
-The above copyright notice and this permission notice shall be included in all
+The source code is made publicly visible for viewing and evaluation only.
+Viewing the Software does not grant any license to use it.
+
+PERMISSION REQUIRED
+
+No person or organization may use, copy, modify, merge, publish, distribute,
+sublicense, sell, host, deploy, or create derivative works from the Software,
+in whole or in part, for any purpose (commercial or non-commercial), without
+first obtaining explicit written permission from the copyright holder.
+
+To request permission, contact the copyright holder through GitHub:
+https://github.com/ayebaretony
+
+Any permission granted is personal to the recipient, applies only to the
+uses stated in writing, and may not be transferred. Where permission is
+granted, the above copyright notice and this license must be included in all
 copies or substantial portions of the Software.
+
+Forking this repository on GitHub, as allowed by GitHub's Terms of Service,
+does not grant any right to use, modify, or redistribute the Software.
+
+The Servly name, logo, mascot, and brand assets may not be used without
+written permission.
+
+DISCLAIMER
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
