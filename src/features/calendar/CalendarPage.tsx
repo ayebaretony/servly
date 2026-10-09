@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useBookingsVersion } from "@/app/useBookingsVersion";
 import { useOpenNewBookingOn } from "@/app/useOpenNewBookingOn";
 import { AceLoadingState } from "@/components/ui/AceLoadingState";
@@ -114,7 +114,7 @@ function CalendarContent({ settings, courts, uid, isAdmin }: CalendarContentProp
 
   const [view, setView] = useState<CalendarView>("month");
   const [selectedDate, setSelectedDate] = useState(today);
-  const [changes, setChanges] = useState(0); // bumped after a cancel, a new block or a removed block
+  const [changes, setChanges] = useState(0); // bumped after a status change, a cancel, a new block or a removed block
   const [dialog, setDialog] = useState<Dialog>(null);
   const openNewBookingOn = useOpenNewBookingOn();
 
@@ -145,7 +145,7 @@ function CalendarContent({ settings, courts, uid, isAdmin }: CalendarContentProp
   const closeDialog = () => setDialog(null);
   const openBooking = (booking: Booking) => setDialog({ kind: "view", booking });
   const openBlock = (block: Block) => setDialog({ kind: "block-view", block });
-  const reload = () => setChanges((n) => n + 1);
+  const reload = useCallback(() => setChanges((n) => n + 1), []);
   const newBookingOn = (date: string) => {
     setSelectedDate(date);
     openNewBookingOn({ date });
@@ -241,6 +241,7 @@ function CalendarContent({ settings, courts, uid, isAdmin }: CalendarContentProp
           settings={settings}
           today={today}
           onClose={closeDialog}
+          onChanged={reload}
           onCancel={() => setDialog({ kind: "cancel", booking: dialog.booking })}
         />
       )}

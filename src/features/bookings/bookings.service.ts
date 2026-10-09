@@ -17,7 +17,7 @@ import {
 import { fromHHmm, slotKey, slotStarts } from "@/lib/conflicts";
 import { db } from "@/lib/firebase";
 import { calcTotalMinor } from "@/lib/money";
-import { zonedDateTime } from "@/lib/time";
+import { minutesOfDay, zonedDateTime } from "@/lib/time";
 import type { Booking, BookingStatus } from "@/types/booking";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
@@ -266,6 +266,67 @@ export async function deleteBooking(bookingId: string): Promise<void> {
       error,
       "Only an admin can delete a booking.",
       "We couldn't delete the booking. Check your connection and try again.",
+    );
+  }
+}
+
+// ---------- Changing the status ----------
+
+// Pending <-> Confirmed only flips the label: the booking keeps its slots, so the time stays held either way.
+// Reinstating a cancelled booking is different: its slots were released, so they are taken again in the SAME transaction
+// (AGENTS.md section 7). If someone booked that time in the meantime, nothing changes and the person is told.
+// To cancel, use cancelBooking: it releases the slots.
+export async function changeBookingStatus(
+  bookingId: string,
+  status: NewBookingStatus,
+  actor: { isAdmin: boolean },
+  settings: CenterSettings,
+): Promise<void> {
+  const bookingRef = doc(db, "bookings", bookingId);
+  try {
+    await runTransaction(db, async (transaction) => {
+      // Firestore wants every read before the first write
+      const bookingSnapshot = await transaction.get(bookingRef);
+      if (!bookingSnapshot.exists()) throw new BookingError("not-found", "This booking no longer exists.");
+      const booking = bookingSnapshot.data() as Omit<Booking, "id">;
+      if (booking.status === status) throw new BookingError("invalid", `This booking is already ${status}.`);
+
+      if (booking.status !== "cancelled") {
+        transaction.update(bookingRef, { status, updatedAt: serverTimestamp() });
+        return;
+      }
+
+      // Same rule as a new booking: staff can't bring back a time that has already started
+      if (!actor.isAdmin && booking.startAt.toDate() <= new Date()) {
+        throw new BookingError("invalid", "This booking's time has already passed. Ask an admin to reinstate it.");
+      }
+
+      const startMin = minutesOfDay(booking.startAt.toDate(), settings.timezone);
+      const slotRefs = slotStarts(startMin, startMin + booking.durationMinutes, settings.slotMinutes).map((minute) =>
+        doc(db, "slots", slotKey(booking.courtId, booking.date, minute)),
+      );
+      const courtSnapshot = await transaction.get(doc(db, "courts", booking.courtId));
+      const slotSnapshots = await Promise.all(slotRefs.map((ref) => transaction.get(ref)));
+
+      const court = courtSnapshot.data() as Omit<Court, "id"> | undefined;
+      if (!court || court.archived || court.status !== "available") {
+        throw new BookingError("court-unavailable", "That court isn't available for booking right now.");
+      }
+      // A slot still pointing at this booking is its own leftover, not a clash
+      if (slotSnapshots.some((slot) => slot.exists() && slot.data().bookingId !== bookingId)) {
+        throw new BookingError("slot-taken", "That time has been booked by someone else, so this booking can't be reinstated.");
+      }
+
+      transaction.update(bookingRef, { status, updatedAt: serverTimestamp() });
+      for (const ref of slotRefs) {
+        transaction.set(ref, { courtId: booking.courtId, date: booking.date, bookingId, blockId: null });
+      }
+    });
+  } catch (error) {
+    throw toBookingError(
+      error,
+      "You don't have permission to change this booking.",
+      "We couldn't change the status. Check your connection and try again.",
     );
   }
 }

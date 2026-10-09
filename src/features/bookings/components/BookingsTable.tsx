@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Eye, RotateCcw, Trash2, XCircle } from "lucide-react";
 import { ActionsMenu, type ActionItem } from "@/components/ui/ActionsMenu";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,8 @@ import { formatDayLabel, formatTimeRange } from "@/lib/time";
 import type { AsyncData } from "@/lib/useAsyncData";
 import type { Booking } from "@/types/booking";
 import type { CenterSettings } from "@/types/settings";
+import type { NewBookingStatus } from "../booking.validation";
+import { statusChangesFor } from "../booking.status";
 import { PAGE_SIZE } from "../bookings.service";
 
 const COLUMNS = ["Date", "Time", "Court", "Customer", "Contact", "Email", "Rate / hour", "Total amount", "Status"];
@@ -25,6 +27,7 @@ type BookingsTableProps = {
   onClearFilters: () => void;
   onNewBooking: () => void;
   onView: (booking: Booking) => void;
+  onChangeStatus: (booking: Booking, status: NewBookingStatus) => void;
   onCancel: (booking: Booking) => void;
   onDelete: (booking: Booking) => void;
   onPrevious: () => void;
@@ -43,6 +46,7 @@ export function BookingsTable({
   onClearFilters,
   onNewBooking,
   onView,
+  onChangeStatus,
   onCancel,
   onDelete,
   onPrevious,
@@ -51,6 +55,10 @@ export function BookingsTable({
 }: BookingsTableProps) {
   function actionsFor(booking: Booking): ActionItem[] {
     const items: ActionItem[] = [{ label: "View details", icon: Eye, onSelect: () => onView(booking) }];
+    for (const change of statusChangesFor(booking.status)) {
+      const icon = booking.status === "cancelled" ? RotateCcw : change.status === "confirmed" ? CheckCircle2 : Clock;
+      items.push({ label: change.label, icon, onSelect: () => onChangeStatus(booking, change.status) });
+    }
     if (booking.status !== "cancelled") {
       items.push({ label: "Cancel booking", icon: XCircle, tone: "danger", onSelect: () => onCancel(booking) });
     }
