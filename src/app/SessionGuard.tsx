@@ -63,21 +63,33 @@ export function SessionGuard() {
   useEffect(() => {
     if (!uid || idleMinutes === 0) return;
     const limitMs = idleMinutes * 60 * 1000;
+    const activityKey = `servly:last-activity:${uid}`;
     let lastActivity = Date.now();
+    localStorage.setItem(activityKey, String(lastActivity));
 
     const onActivity = () => {
       lastActivity = Date.now();
+      localStorage.setItem(activityKey, String(lastActivity));
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== activityKey || event.newValue === null) return;
+      const timestamp = Number(event.newValue);
+      if (Number.isFinite(timestamp)) lastActivity = Math.max(lastActivity, timestamp);
     };
     const lookAtClock = () => {
+      const sharedActivity = Number(localStorage.getItem(activityKey));
+      if (Number.isFinite(sharedActivity)) lastActivity = Math.max(lastActivity, sharedActivity);
       if (Date.now() - lastActivity < limitMs) return;
       setSignOutNotice("You were signed out because you were inactive for a while. Sign in again to continue.");
       void signOutUser();
     };
 
     ACTIVITY_EVENTS.forEach((name) => window.addEventListener(name, onActivity, { passive: true }));
+    window.addEventListener("storage", onStorage);
     const timer = window.setInterval(lookAtClock, IDLE_LOOK_EVERY_MS);
     return () => {
       ACTIVITY_EVENTS.forEach((name) => window.removeEventListener(name, onActivity));
+      window.removeEventListener("storage", onStorage);
       window.clearInterval(timer);
     };
   }, [uid, idleMinutes]);

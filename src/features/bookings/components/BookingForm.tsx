@@ -43,12 +43,13 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
   const bookable = courts.filter((court) => court.status === "available");
   const [values, setValues] = useState<BookingFormValues>(() => {
     // A clicked hour only pre-fills when it is a real start time at this center; the person can still change it
+    const openMin = parseHHmm(settings.openTime);
     const closeMin = parseHHmm(settings.closeTime);
     const startFits =
       initialStartMin !== undefined &&
-      initialStartMin >= parseHHmm(settings.openTime) &&
+      initialStartMin >= openMin &&
       initialStartMin + settings.slotMinutes <= closeMin &&
-      initialStartMin % settings.slotMinutes === 0;
+      (initialStartMin - openMin) % settings.slotMinutes === 0;
     const oneHour = Math.max(settings.slotMinutes, Math.floor(60 / settings.slotMinutes) * settings.slotMinutes);
     return {
       courtId: bookable.length === 1 ? bookable[0].id : "",
