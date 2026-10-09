@@ -84,7 +84,7 @@ function CourtsContent({ courts, settings, uid, canManage, onChanged }: CourtsCo
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="type-h1">Manage your courts</h1>
-          <p className="mt-1 text-sm text-muted">Set availability, pricing, and maintenance status for each court.</p>
+          <p className="mt-1 text-sm text-muted">Manage availability and maintenance status for each court.</p>
         </div>
         {canManage && (
           <Button onClick={() => setDialog({ kind: "add" })}>

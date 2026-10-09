@@ -25,6 +25,9 @@ export function checkBookingWindow({ date, startMin, endMin, settings, isAdmin, 
       message: `Bookings run from ${formatMinutes(open)} to ${formatMinutes(close)}.`,
     };
   }
+  if ((startMin - open) % settings.slotMinutes !== 0) {
+    return { field: "startMin", message: `Start times are made in ${settings.slotMinutes}-minute steps from opening time.` };
+  }
   if ((endMin - startMin) % settings.slotMinutes !== 0) {
     return { field: "endMin", message: `Bookings are made in ${settings.slotMinutes}-minute steps.` };
   }

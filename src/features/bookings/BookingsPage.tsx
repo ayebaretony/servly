@@ -1,5 +1,5 @@
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useBookingsVersion } from "@/app/useBookingsVersion";
 import { useOpenNewBooking } from "@/app/useOpenNewBooking";
@@ -25,6 +25,7 @@ import { BookingsSummaryStrip } from "./components/BookingsSummaryStrip";
 import { BookingsTable } from "./components/BookingsTable";
 import { CancelBookingModal } from "./components/CancelBookingModal";
 import { DeleteBookingModal } from "./components/DeleteBookingModal";
+import { useBookingStatusChange } from "./hooks/useBookingStatusChange";
 import { useBookingsData } from "./hooks/useBookingsData";
 
 // Settings and courts come first: "today" depends on the center's timezone, and the court filter needs the court list.
@@ -75,7 +76,7 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
   const setTerm = (next: string) => setSearchParams(next ? { q: next } : {}, { replace: true });
 
   const [filters, setFilters] = useState<BookingFilters>(NO_FILTERS);
-  const [changes, setChanges] = useState(0); // bumped after a cancel or delete
+  const [changes, setChanges] = useState(0); // bumped after a status change, cancel or delete
   const [dialog, setDialog] = useState<Dialog>(null);
 
   // Read everything again after a change here, or after a booking was created from the "+ New booking" pop-up
@@ -107,7 +108,8 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
   }
 
   const closeDialog = () => setDialog(null);
-  const refresh = () => setChanges((n) => n + 1);
+  const refresh = useCallback(() => setChanges((n) => n + 1), []);
+  const statusChange = useBookingStatusChange(settings, refresh);
 
   return (
     <div className="space-y-6">
@@ -150,6 +152,7 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
         onClearFilters={clearFilters}
         onNewBooking={openNewBooking}
         onView={(booking) => setDialog({ kind: "view", booking })}
+        onChangeStatus={(booking, status) => void statusChange.change(booking, status)}
         onCancel={(booking) => setDialog({ kind: "cancel", booking })}
         onDelete={(booking) => setDialog({ kind: "delete", booking })}
         onPrevious={data.goPrevious}
@@ -158,7 +161,14 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
       />
 
       {dialog?.kind === "view" && (
-        <BookingDetailsModal booking={dialog.booking} settings={settings} today={today} onClose={closeDialog} />
+        <BookingDetailsModal
+          booking={dialog.booking}
+          settings={settings}
+          today={today}
+          onClose={closeDialog}
+          onChanged={refresh}
+          onCancel={() => setDialog({ kind: "cancel", booking: dialog.booking })}
+        />
       )}
       {dialog?.kind === "cancel" && (
         <CancelBookingModal booking={dialog.booking} settings={settings} today={today} onClose={closeDialog} onDone={refresh} />
