@@ -10,11 +10,24 @@ type WindowCheck = {
   settings: CenterSettings;
   isAdmin: boolean;
   now: Date;
+  // Editing a booking that keeps its start: the start may already be behind us, but the new end still has to be ahead
+  keepsStart?: boolean;
 };
+
+// Where and when a booking is, as the edit form and the save both compare it
+export type Schedule = { courtId: string; date: string; startMin: number; endMin: number };
+
+export function sameSchedule(a: Schedule, b: Schedule): boolean {
+  return a.courtId === b.courtId && a.date === b.date && a.startMin === b.startMin && a.endMin === b.endMin;
+}
+
+export function keepsStart(original: Schedule, edited: Schedule): boolean {
+  return original.date === edited.date && original.startMin === edited.startMin;
+}
 
 // The "when" rules from AGENTS.md section 7: inside opening hours, on the slot grid, not in the past (admins may back-date).
 // Used by the form for inline errors and again by the save, so the two can never disagree.
-export function checkBookingWindow({ date, startMin, endMin, settings, isAdmin, now }: WindowCheck): WindowProblem | null {
+export function checkBookingWindow({ date, startMin, endMin, settings, isAdmin, now, keepsStart = false }: WindowCheck): WindowProblem | null {
   const open = parseHHmm(settings.openTime);
   const close = parseHHmm(settings.closeTime);
 
@@ -32,7 +45,11 @@ export function checkBookingWindow({ date, startMin, endMin, settings, isAdmin, 
     return { field: "endMin", message: `Bookings are made in ${settings.slotMinutes}-minute steps.` };
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && keepsStart) {
+    if (zonedDateTime(date, endMin, settings.timezone) <= now) {
+      return { field: "endMin", message: "That end time has already passed." };
+    }
+  } else if (!isAdmin) {
     if (date < todayInTimezone(settings.timezone, now)) {
       return { field: "date", message: "Pick today or a later date." };
     }

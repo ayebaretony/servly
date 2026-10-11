@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { NewBookingModal } from "@/features/bookings/components/NewBookingModal";
+import { BookingFormModal } from "@/features/bookings/components/BookingFormModal";
 import { BookingModalContext, type BookingPrefill } from "./BookingModalContext";
 
 // Owns the one "New booking" pop-up, so the button works from any page (AGENTS.md section 5, "Global layout").
@@ -19,11 +19,11 @@ export function BookingModalProvider({ children }: { children: ReactNode }) {
     <BookingModalContext.Provider value={value}>
       {children}
       {prefill && (
-        <NewBookingModal
+        <BookingFormModal
           initialDate={prefill.date}
           initialStartMin={prefill.startMin}
           onClose={() => setPrefill(null)}
-          onCreated={() => setBookingsVersion((n) => n + 1)}
+          onSaved={() => setBookingsVersion((n) => n + 1)}
         />
       )}
     </BookingModalContext.Provider>

@@ -19,6 +19,7 @@ import type { CenterSettings } from "@/types/settings";
 import { buildBookingsCsv, downloadCsv } from "./bookings.export";
 import { computeBookingsSummary } from "./bookings.metrics";
 import { NO_FILTERS, type BookingFilters } from "./bookings.service";
+import { BookingFormModal } from "./components/BookingFormModal";
 import { BookingDetailsModal } from "./components/BookingDetailsModal";
 import { BookingsFilterBar } from "./components/BookingsFilterBar";
 import { BookingsSummaryStrip } from "./components/BookingsSummaryStrip";
@@ -58,8 +59,8 @@ export function BookingsPage() {
   return <BookingsContent settings={settings.data} courts={courts.data} isAdmin={auth.profile.role === "admin"} />;
 }
 
-// Which pop-up is open: none, a booking's details, or a confirmation to cancel or delete one
-type Dialog = { kind: "view" | "cancel" | "delete"; booking: Booking } | null;
+// Which pop-up is open: none, a booking's details, its edit form, or a confirmation to cancel or delete it
+type Dialog = { kind: "view" | "edit" | "cancel" | "delete"; booking: Booking } | null;
 
 type BookingsContentProps = { settings: CenterSettings; courts: Court[]; isAdmin: boolean };
 
@@ -76,7 +77,7 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
   const setTerm = (next: string) => setSearchParams(next ? { q: next } : {}, { replace: true });
 
   const [filters, setFilters] = useState<BookingFilters>(NO_FILTERS);
-  const [changes, setChanges] = useState(0); // bumped after a status change, cancel or delete
+  const [changes, setChanges] = useState(0); // bumped after a status change, edit, cancel or delete
   const [dialog, setDialog] = useState<Dialog>(null);
 
   // Read everything again after a change here, or after a booking was created from the "+ New booking" pop-up
@@ -152,6 +153,7 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
         onClearFilters={clearFilters}
         onNewBooking={openNewBooking}
         onView={(booking) => setDialog({ kind: "view", booking })}
+        onEdit={(booking) => setDialog({ kind: "edit", booking })}
         onChangeStatus={(booking, status) => void statusChange.change(booking, status)}
         onCancel={(booking) => setDialog({ kind: "cancel", booking })}
         onDelete={(booking) => setDialog({ kind: "delete", booking })}
@@ -168,8 +170,10 @@ function BookingsContent({ settings, courts, isAdmin }: BookingsContentProps) {
           onClose={closeDialog}
           onChanged={refresh}
           onCancel={() => setDialog({ kind: "cancel", booking: dialog.booking })}
+          onEdit={() => setDialog({ kind: "edit", booking: dialog.booking })}
         />
       )}
+      {dialog?.kind === "edit" && <BookingFormModal booking={dialog.booking} onClose={closeDialog} onSaved={refresh} />}
       {dialog?.kind === "cancel" && (
         <CancelBookingModal booking={dialog.booking} settings={settings} today={today} onClose={closeDialog} onDone={refresh} />
       )}

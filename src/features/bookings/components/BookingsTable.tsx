@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Eye, RotateCcw, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Eye, Pencil, RotateCcw, Trash2, XCircle } from "lucide-react";
 import { ActionsMenu, type ActionItem } from "@/components/ui/ActionsMenu";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -27,6 +27,7 @@ type BookingsTableProps = {
   onClearFilters: () => void;
   onNewBooking: () => void;
   onView: (booking: Booking) => void;
+  onEdit: (booking: Booking) => void;
   onChangeStatus: (booking: Booking, status: NewBookingStatus) => void;
   onCancel: (booking: Booking) => void;
   onDelete: (booking: Booking) => void;
@@ -46,6 +47,7 @@ export function BookingsTable({
   onClearFilters,
   onNewBooking,
   onView,
+  onEdit,
   onChangeStatus,
   onCancel,
   onDelete,
@@ -55,6 +57,8 @@ export function BookingsTable({
 }: BookingsTableProps) {
   function actionsFor(booking: Booking): ActionItem[] {
     const items: ActionItem[] = [{ label: "View details", icon: Eye, onSelect: () => onView(booking) }];
+    // A cancelled booking is reinstated first (below), then it can be edited
+    if (booking.status !== "cancelled") items.push({ label: "Edit booking", icon: Pencil, onSelect: () => onEdit(booking) });
     for (const change of statusChangesFor(booking.status)) {
       const icon = booking.status === "cancelled" ? RotateCcw : change.status === "confirmed" ? CheckCircle2 : Clock;
       items.push({ label: change.label, icon, onSelect: () => onChangeStatus(booking, change.status) });

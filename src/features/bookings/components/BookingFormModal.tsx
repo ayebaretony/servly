@@ -5,24 +5,30 @@ import { EmptyMessage, ErrorMessage } from "@/components/ui/StateMessages";
 import { useAuth } from "@/features/auth/useAuth";
 import { useCourts } from "@/features/courts/hooks/useCourts";
 import { useCenterSettings } from "@/features/settings/hooks/useCenterSettings";
+import type { Booking } from "@/types/booking";
 import { BookingForm } from "./BookingForm";
 
-// The "+ New booking" pop-up. Loads the courts and center settings first (both cached after the first read),
-// then shows the form. Mount it only while it should be open.
-type NewBookingModalProps = {
+// The "+ New booking" pop-up, or "Edit booking" when given a booking. Loads the courts and center settings first
+// (both cached after the first read), then shows the form. Mount it only while it should be open.
+type BookingFormModalProps = {
+  booking?: Booking; // set to edit this booking
   initialDate?: string; // when opened from the calendar
   initialStartMin?: number;
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
 };
 
-export function NewBookingModal({ initialDate, initialStartMin, onClose, onCreated }: NewBookingModalProps) {
+export function BookingFormModal({ booking, initialDate, initialStartMin, onClose, onSaved }: BookingFormModalProps) {
   const auth = useAuth();
   const courts = useCourts();
   const settings = useCenterSettings();
 
   return (
-    <Modal title="New booking" description="Reserve a court for a customer." onClose={onClose}>
+    <Modal
+      title={booking ? "Edit booking" : "New booking"}
+      description={booking ? "Change the time, length, rate or customer details." : "Reserve a court for a customer."}
+      onClose={onClose}
+    >
       {auth.status !== "active" || courts.status === "loading" || settings.status === "loading" ? (
         <ModalBody>
           <div role="status" aria-label="Loading the booking form" className="space-y-4">
@@ -55,8 +61,9 @@ export function NewBookingModal({ initialDate, initialStartMin, onClose, onCreat
           actor={{ uid: auth.uid, isAdmin: auth.profile.role === "admin" }}
           initialDate={initialDate}
           initialStartMin={initialStartMin}
+          booking={booking}
           onClose={onClose}
-          onCreated={onCreated}
+          onSaved={onSaved}
         />
       )}
     </Modal>

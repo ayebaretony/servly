@@ -4,6 +4,7 @@ import { useOpenNewBookingOn } from "@/app/useOpenNewBookingOn";
 import { AceLoadingState } from "@/components/ui/AceLoadingState";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/StateMessages";
+import { BookingFormModal } from "@/features/bookings/components/BookingFormModal";
 import { BookingDetailsModal } from "@/features/bookings/components/BookingDetailsModal";
 import { CancelBookingModal } from "@/features/bookings/components/CancelBookingModal";
 import { useAuth } from "@/features/auth/useAuth";
@@ -97,10 +98,10 @@ function stepDate(view: CalendarView, date: string, direction: 1 | -1, today: st
   return monthStart(target) === monthStart(today) ? today : target;
 }
 
-// Which pop-up is open: none, a booking's details or its cancel confirmation, a block's details or its remove
+// Which pop-up is open: none, a booking's details, edit form or cancel confirmation, a block's details or its remove
 // confirmation, or the "Block time" form
 type Dialog =
-  | { kind: "view" | "cancel"; booking: Booking }
+  | { kind: "view" | "edit" | "cancel"; booking: Booking }
   | { kind: "block-view" | "block-remove"; block: Block }
   | { kind: "block-new" }
   | null;
@@ -243,8 +244,10 @@ function CalendarContent({ settings, courts, uid, isAdmin }: CalendarContentProp
           onClose={closeDialog}
           onChanged={reload}
           onCancel={() => setDialog({ kind: "cancel", booking: dialog.booking })}
+          onEdit={() => setDialog({ kind: "edit", booking: dialog.booking })}
         />
       )}
+      {dialog?.kind === "edit" && <BookingFormModal booking={dialog.booking} onClose={closeDialog} onSaved={reload} />}
       {dialog?.kind === "cancel" && (
         <CancelBookingModal
           booking={dialog.booking}
