@@ -6,7 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/useToast";
 import { bookedRanges, overlapsTaken } from "@/lib/conflicts";
-import { calcTotalMinor, formatMoney, formatRate, parseMajorToMinor } from "@/lib/money";
+import { calcTotalMinor, formatMoney, formatRate, minorToMajorInput, parseMajorToMinor } from "@/lib/money";
 import {
   formatDuration,
   formatMinutes,
@@ -15,10 +15,12 @@ import {
   parseHHmm,
   todayInTimezone,
 } from "@/lib/time";
+import type { Booking } from "@/types/booking";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
 import { NOTES_MAX, parseMinutes, validateBooking, type BookingFormValues, type NewBookingStatus } from "../booking.validation";
-import { BookingError, createBooking } from "../bookings.service";
+import type { Schedule } from "../bookings.rules";
+import { BookingError, createBooking, updateBooking } from "../bookings.service";
 import { useTakenSlots } from "../hooks/useTakenSlots";
 
 // Quick picks for how long the booking runs. Only shown when they fit the slot size and opening hours.
@@ -30,18 +32,42 @@ type BookingFormProps = {
   actor: { uid: string; isAdmin: boolean };
   initialDate?: string; // set when opened from a day or hour on the calendar
   initialStartMin?: number;
+  booking?: Booking; // set to edit this booking instead of creating a new one
   onClose: () => void;
-  onCreated: () => void; // lets a list on screen read again
+  onSaved: () => void; // lets a list on screen read again
 };
 
-export function BookingForm({ courts, settings, actor, initialDate, initialStartMin, onClose, onCreated }: BookingFormProps) {
+// Where and when an existing booking is, in the form's own terms (minutes since midnight at the center)
+function scheduleOf(booking: Booking, timezone: string): Schedule {
+  const startMin = minutesOfDay(booking.startAt.toDate(), timezone);
+  return { courtId: booking.courtId, date: booking.date, startMin, endMin: startMin + booking.durationMinutes };
+}
+
+export function BookingForm({ courts, settings, actor, initialDate, initialStartMin, booking, onClose, onSaved }: BookingFormProps) {
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   // Fixed while the form is open, so what the form shows and what it validates always agree
   const [openedAt] = useState(() => new Date());
 
   const bookable = courts.filter((court) => court.status === "available");
+  // Fixed while the form is open: what the booking looked like when editing started
+  const [original] = useState(() => (booking ? scheduleOf(booking, settings.timezone) : undefined));
   const [values, setValues] = useState<BookingFormValues>(() => {
+    if (booking && original) {
+      return {
+        courtId: booking.courtId,
+        customerName: booking.customerName,
+        customerPhone: booking.customerPhone,
+        customerEmail: booking.customerEmail ?? "",
+        date: booking.date,
+        start: String(original.startMin),
+        end: String(original.endMin),
+        rate: minorToMajorInput(booking.hourlyRateMinor),
+        // A cancelled booking is reinstated from its menu, not edited, so this is never "cancelled"
+        status: booking.status === "pending" ? "pending" : "confirmed",
+        notes: booking.notes ?? "",
+      };
+    }
     // A clicked hour only pre-fills when it is a real start time at this center; the person can still change it
     const openMin = parseHHmm(settings.openTime);
     const closeMin = parseHHmm(settings.closeTime);
@@ -69,7 +95,7 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [availabilityKey, setAvailabilityKey] = useState(0);
 
-  const slots = useTakenSlots(values.courtId, values.date, availabilityKey);
+  const slots = useTakenSlots(values.courtId, values.date, availabilityKey, booking?.id);
   const { taken } = slots;
 
   const slotMinutes = settings.slotMinutes;
@@ -82,7 +108,8 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
   // null until the typed rate is a valid amount
   const hourlyRateMinor = parseMajorToMinor(values.rate);
 
-  const errors = submitted ? validateBooking(values, { courts, settings, isAdmin: actor.isAdmin, now: openedAt, taken }) : {};
+  const validationContext = { courts, settings, isAdmin: actor.isAdmin, now: openedAt, taken, original };
+  const errors = submitted ? validateBooking(values, validationContext) : {};
 
   // Start times: every slot from opening until one slot before closing. Times that already passed today are left out.
   const startOptions = useMemo(() => {
@@ -90,10 +117,12 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
     const hidePast = !actor.isAdmin && values.date === today;
     const options: number[] = [];
     for (let minute = open; minute + slotMinutes <= close; minute += slotMinutes) {
-      if (!hidePast || minute > nowMinutes) options.push(minute);
+      // A booking that already started keeps its start time in the list, so it can still be shortened or its details fixed
+      const isOwnStart = original !== undefined && values.date === original.date && minute === original.startMin;
+      if (!hidePast || minute > nowMinutes || isOwnStart) options.push(minute);
     }
     return options;
-  }, [open, close, slotMinutes, openedAt, settings.timezone, actor.isAdmin, values.date, today]);
+  }, [open, close, slotMinutes, openedAt, settings.timezone, actor.isAdmin, values.date, today, original]);
 
   // End times: from one slot after the start until closing
   const endOptions = useMemo(() => {
@@ -128,7 +157,7 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
     setSubmitted(true);
     setSubmitError(null);
 
-    const found = validateBooking(values, { courts, settings, isAdmin: actor.isAdmin, now: openedAt, taken });
+    const found = validateBooking(values, validationContext);
     if (Object.keys(found).length > 0 || startMin === null || endMin === null || hourlyRateMinor === null) {
       // Take the person to the first field that needs attention
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
@@ -137,26 +166,23 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
 
     setSaving(true);
     try {
-      const created = await createBooking(
-        {
-          courtId: values.courtId,
-          customerName: values.customerName.trim(),
-          customerPhone: values.customerPhone.trim(),
-          customerEmail: values.customerEmail.trim() || null,
-          date: values.date,
-          startMin,
-          endMin,
-          hourlyRateMinor,
-          status: values.status,
-          notes: values.notes.trim() || null,
-        },
-        actor,
-        settings,
-      );
+      const input = {
+        courtId: values.courtId,
+        customerName: values.customerName.trim(),
+        customerPhone: values.customerPhone.trim(),
+        customerEmail: values.customerEmail.trim() || null,
+        date: values.date,
+        startMin,
+        endMin,
+        hourlyRateMinor,
+        status: values.status,
+        notes: values.notes.trim() || null,
+      };
+      const saved = booking ? await updateBooking(booking.id, input, actor, settings) : await createBooking(input, actor, settings);
       showToast(
-        `Booking created: ${created.courtName}, ${formatTimeRange(created.startAt, created.endAt, settings.timezone)} (${formatMoney(created.totalMinor, settings.currency)}).`,
+        `Booking ${booking ? "updated" : "created"}: ${saved.courtName}, ${formatTimeRange(saved.startAt, saved.endAt, settings.timezone)} (${formatMoney(saved.totalMinor, settings.currency)}).`,
       );
-      onCreated();
+      onSaved();
       onClose();
     } catch (error) {
       // Customer details can be inside a raw error, so only our own friendly messages are shown (and nothing is logged)
@@ -384,7 +410,7 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
           Cancel
         </Button>
         <Button type="submit" loading={saving}>
-          {saving ? "Creating…" : "Create booking"}
+          {saving ? "Saving…" : booking ? "Save changes" : "Create booking"}
         </Button>
       </ModalFooter>
     </form>

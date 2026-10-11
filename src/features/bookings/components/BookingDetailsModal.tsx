@@ -16,12 +16,14 @@ type BookingDetailsModalProps = {
   onClose: () => void;
   // Shown as a "Cancel booking" button (not for bookings that are already cancelled). The caller opens the confirmation.
   onCancel?: () => void;
+  // Shown as an "Edit booking" button (not for cancelled bookings, which are reinstated instead). The caller opens the form.
+  onEdit?: () => void;
   // Lets the list behind this pop-up read again after the status was changed here
   onChanged: () => void;
 };
 
 // Everything saved on a booking, with buttons to change its status
-export function BookingDetailsModal({ booking, settings, today, onClose, onCancel, onChanged }: BookingDetailsModalProps) {
+export function BookingDetailsModal({ booking, settings, today, onClose, onCancel, onEdit, onChanged }: BookingDetailsModalProps) {
   const { change, busy } = useBookingStatusChange(settings, onChanged);
   // Which status button was pressed, so only that one shows it is working
   const [pressed, setPressed] = useState<string | null>(null);
@@ -79,6 +81,11 @@ export function BookingDetailsModal({ booking, settings, today, onClose, onCance
             {option.label}
           </Button>
         ))}
+        {onEdit && booking.status !== "cancelled" && (
+          <Button variant="secondary" onClick={onEdit} disabled={busy}>
+            Edit booking
+          </Button>
+        )}
         <Button variant="secondary" onClick={onClose} disabled={busy}>
           Close
         </Button>

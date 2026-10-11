@@ -22,7 +22,7 @@ import type { Booking, BookingStatus } from "@/types/booking";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
 import type { NewBookingStatus } from "./booking.validation";
-import { checkBookingWindow } from "./bookings.rules";
+import { checkBookingWindow, keepsStart, sameSchedule } from "./bookings.rules";
 
 // Firestore security rules already guarantee the stored shape (see validBooking in firestore.rules), so this is a typed read, not a re-check.
 export function readBooking(snapshot: QueryDocumentSnapshot): Booking {
@@ -41,12 +41,15 @@ export class BookingError extends Error {
 
 // Start minutes of the slots already taken on one court and day (by bookings and maintenance blocks).
 // Two equality filters need no composite index, and a day has at most a few dozen slots.
-export async function fetchTakenSlotStarts(courtId: string, date: string): Promise<number[]> {
+// When editing, pass the booking's own id so its current time doesn't count as "taken" against itself.
+export async function fetchTakenSlotStarts(courtId: string, date: string, ignoreBookingId?: string): Promise<number[]> {
   const snapshot = await getDocs(
     query(collection(db, "slots"), where("courtId", "==", courtId), where("date", "==", date)),
   );
   // The slot id ends in the start time: courtId_date_HHmm
-  return snapshot.docs.map((slot) => fromHHmm(slot.id.slice(-4)));
+  return snapshot.docs
+    .filter((slot) => !ignoreBookingId || slot.data().bookingId !== ignoreBookingId)
+    .map((slot) => fromHHmm(slot.id.slice(-4)));
 }
 
 export type NewBookingInput = {
@@ -266,6 +269,130 @@ export async function deleteBooking(bookingId: string): Promise<void> {
       error,
       "Only an admin can delete a booking.",
       "We couldn't delete the booking. Check your connection and try again.",
+    );
+  }
+}
+
+// ---------- Editing ----------
+
+// Saves changes to a booking: customer details, court, date, time, rate, status and notes.
+// Like createBooking, the booking and its slots change in ONE transaction. Slots the booking still needs are left alone,
+// new ones are created (and refused if someone else holds them), and ones it no longer needs are released, so shortening a
+// booking frees the end of it straight away. A cancelled booking can't be edited; reinstate it first.
+export async function updateBooking(
+  bookingId: string,
+  input: NewBookingInput,
+  actor: { isAdmin: boolean },
+  settings: CenterSettings,
+): Promise<CreatedBooking> {
+  if (!Number.isInteger(input.hourlyRateMinor) || input.hourlyRateMinor <= 0) {
+    throw new BookingError("invalid", "Enter the hourly rate for this booking.");
+  }
+
+  const bookingRef = doc(db, "bookings", bookingId);
+  const courtRef = doc(db, "courts", input.courtId);
+  const edited = { courtId: input.courtId, date: input.date, startMin: input.startMin, endMin: input.endMin };
+  const durationMinutes = input.endMin - input.startMin;
+  const wantedIds = slotStarts(input.startMin, input.endMin, settings.slotMinutes).map((minute) =>
+    slotKey(input.courtId, input.date, minute),
+  );
+
+  try {
+    // Found by bookingId (not rebuilt from the old times), so it still works if the slot length was changed since
+    const ownRefs = await findSlotRefs(bookingId);
+    return await runTransaction(db, async (transaction) => {
+      // Firestore wants every read before the first write
+      const bookingSnapshot = await transaction.get(bookingRef);
+      if (!bookingSnapshot.exists()) throw new BookingError("not-found", "This booking no longer exists.");
+      const booking = bookingSnapshot.data() as Omit<Booking, "id">;
+      if (booking.status === "cancelled") {
+        throw new BookingError("invalid", "A cancelled booking can't be edited. Reinstate it first.");
+      }
+
+      const originalStart = minutesOfDay(booking.startAt.toDate(), settings.timezone);
+      const original = {
+        courtId: booking.courtId,
+        date: booking.date,
+        startMin: originalStart,
+        endMin: originalStart + booking.durationMinutes,
+      };
+      // Only when the court, day or time changes do the "can this be booked?" checks apply. Fixing a phone number on a
+      // booking that already took place must keep working.
+      const scheduleChanged = !sameSchedule(original, edited);
+      if (scheduleChanged) {
+        const problem = checkBookingWindow({
+          ...edited,
+          settings,
+          isAdmin: actor.isAdmin,
+          now: new Date(),
+          keepsStart: keepsStart(original, edited),
+        });
+        if (problem) throw new BookingError("invalid", problem.message);
+      }
+
+      const courtSnapshot = scheduleChanged ? await transaction.get(courtRef) : null;
+      const wantedRefs = scheduleChanged ? wantedIds.map((id) => doc(db, "slots", id)) : [];
+      const wantedSnapshots = await Promise.all(wantedRefs.map((ref) => transaction.get(ref)));
+      const ownSnapshots = scheduleChanged ? await Promise.all(ownRefs.map((ref) => transaction.get(ref))) : [];
+
+      let courtName = booking.courtName;
+      if (courtSnapshot) {
+        const court = courtSnapshot.data() as Omit<Court, "id"> | undefined;
+        if (!court || court.archived || court.status !== "available") {
+          throw new BookingError("court-unavailable", "That court isn't available for booking right now.");
+        }
+        courtName = court.name;
+      }
+      // A slot that already points at this booking is its own, not a clash
+      if (wantedSnapshots.some((slot) => slot.exists() && slot.data().bookingId !== bookingId)) {
+        throw new BookingError("slot-taken", "That time is no longer available. Please pick another time.");
+      }
+
+      const rateOrLengthChanged =
+        input.hourlyRateMinor !== booking.hourlyRateMinor || durationMinutes !== booking.durationMinutes;
+      // The saved total only moves when the person changed the rate or the length (AGENTS.md "Money rules")
+      const totalMinor = rateOrLengthChanged ? calcTotalMinor(input.hourlyRateMinor, durationMinutes) : booking.totalMinor;
+      const startAt = zonedDateTime(input.date, input.startMin, settings.timezone);
+      const endAt = zonedDateTime(input.date, input.endMin, settings.timezone);
+
+      transaction.update(bookingRef, {
+        courtId: input.courtId,
+        courtName,
+        customerName: input.customerName,
+        customerPhone: input.customerPhone,
+        customerEmail: input.customerEmail,
+        date: input.date,
+        startAt: Timestamp.fromDate(startAt),
+        endAt: Timestamp.fromDate(endAt),
+        durationMinutes,
+        hourlyRateMinor: input.hourlyRateMinor,
+        totalMinor,
+        status: input.status,
+        notes: input.notes,
+        updatedAt: serverTimestamp(),
+      });
+
+      if (scheduleChanged) {
+        const wanted = new Set(wantedIds);
+        // Release what is no longer needed. Only slots that still belong to this booking are touched.
+        for (const slot of ownSnapshots) {
+          if (slot.exists() && slot.data().bookingId === bookingId && !wanted.has(slot.id)) transaction.delete(slot.ref);
+        }
+        // Take what is newly needed. A kept slot is not written again: the rules allow creating a slot, never updating one.
+        wantedSnapshots.forEach((slot, index) => {
+          if (!slot.exists()) {
+            transaction.set(wantedRefs[index], { courtId: input.courtId, date: input.date, bookingId, blockId: null });
+          }
+        });
+      }
+
+      return { id: bookingId, courtName, startAt, endAt, totalMinor };
+    });
+  } catch (error) {
+    throw toBookingError(
+      error,
+      "You don't have permission to edit this booking.",
+      "We couldn't save the changes. Check your connection and try again.",
     );
   }
 }
