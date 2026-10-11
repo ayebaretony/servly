@@ -1,6 +1,6 @@
 import { addDoc, collection, doc, getDocs, orderBy, query, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { nextCourtColor } from "@/theme/courtColors";
+import { isCourtColorKey, nextCourtColor } from "@/theme/courtColors";
 import type { Court, CourtStatus } from "@/types/court";
 
 // Courts change rarely, so they are read once and kept in memory (AGENTS.md section 8).
@@ -61,9 +61,15 @@ export async function createCourt(input: CourtInput, existing: Court[]): Promise
   }
 }
 
-export async function updateCourt(courtId: string, input: CourtInput): Promise<void> {
+// Saving also repairs a colour clash: a court that shares its colour with an earlier court (or has an unknown one)
+// moves to a free colour. This fixes courts created back when the palette only had four colours.
+export async function updateCourt(court: Court, input: CourtInput, existing: Court[]): Promise<void> {
+  const takenByOthers = existing.filter((other) => other.id !== court.id).map((other) => other.color);
+  const takenByEarlier = existing.filter((other) => other.sortOrder < court.sortOrder).map((other) => other.color);
+  const needsNewColor = !isCourtColorKey(court.color) || takenByEarlier.includes(court.color);
+  const color = needsNewColor ? nextCourtColor(takenByOthers) : court.color;
   try {
-    await updateDoc(doc(db, "courts", courtId), { ...input });
+    await updateDoc(doc(db, "courts", court.id), { ...input, color });
   } catch (error) {
     throw toCourtError(error);
   } finally {

@@ -66,7 +66,7 @@ export function CourtFormModal({ court, courts, onClose, onSaved }: CourtFormMod
 
     setSaving(true);
     try {
-      if (court) await updateCourt(court.id, input);
+      if (court) await updateCourt(court, input, courts);
       else await createCourt(input, courts);
       showToast(isEditing ? `${input.name} was updated.` : `${input.name} was added.`);
       onSaved();
