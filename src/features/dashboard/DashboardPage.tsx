@@ -14,6 +14,7 @@ import { RevenueCard } from "./components/RevenueCard";
 import { StatCards } from "./components/StatCards";
 import { TodayGlance } from "./components/TodayGlance";
 import { useBookingHistory, useRecentBookings } from "./hooks/useBookingHistory";
+import { useTodayBlocks } from "./hooks/useTodayBlocks";
 import { useTodayBookings } from "./hooks/useTodayBookings";
 
 function greetingFor(hour: number) {
@@ -58,6 +59,7 @@ function DashboardContent({ firstName, settings, courts }: { firstName: string; 
   const today = todayInTimezone(settings.timezone, now);
 
   const todayBookings = useTodayBookings(today);
+  const todayBlocks = useTodayBlocks(today, settings.timezone);
   const history = useBookingHistory(today);
   const recent = useRecentBookings();
 
@@ -74,10 +76,9 @@ function DashboardContent({ firstName, settings, courts }: { firstName: string; 
         <StatCards today={today} todayBookings={todayBookings} history={history} courts={courts} settings={settings} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-        <TodayGlance today={today} todayBookings={todayBookings} courts={courts} settings={settings} />
-        <RevenueCard today={today} history={history} settings={settings} />
-      </div>
+      {/* Full width: the schedule has a column for every hour of the day */}
+      <TodayGlance today={today} todayBookings={todayBookings} todayBlocks={todayBlocks} courts={courts} settings={settings} />
+      <RevenueCard today={today} history={history} settings={settings} />
 
       <RecentBookings recent={recent} settings={settings} />
     </div>

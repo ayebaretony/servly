@@ -14,11 +14,12 @@ type BookingFormModalProps = {
   booking?: Booking; // set to edit this booking
   initialDate?: string; // when opened from the calendar
   initialStartMin?: number;
+  initialCourtId?: string;
   onClose: () => void;
   onSaved: () => void;
 };
 
-export function BookingFormModal({ booking, initialDate, initialStartMin, onClose, onSaved }: BookingFormModalProps) {
+export function BookingFormModal({ booking, initialDate, initialStartMin, initialCourtId, onClose, onSaved }: BookingFormModalProps) {
   const auth = useAuth();
   const courts = useCourts();
   const settings = useCenterSettings();
@@ -61,6 +62,7 @@ export function BookingFormModal({ booking, initialDate, initialStartMin, onClos
           actor={{ uid: auth.uid, isAdmin: auth.profile.role === "admin" }}
           initialDate={initialDate}
           initialStartMin={initialStartMin}
+          initialCourtId={initialCourtId}
           booking={booking}
           onClose={onClose}
           onSaved={onSaved}

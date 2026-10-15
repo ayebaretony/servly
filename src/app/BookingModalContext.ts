@@ -4,6 +4,7 @@ import { createContext } from "react";
 export type BookingPrefill = {
   date: string; // "YYYY-MM-DD" at the center
   startMin?: number; // minutes since midnight, when an hour slot was clicked
+  courtId?: string; // when a free slot on one court's row was clicked
 };
 
 export type BookingModalContextValue = {
