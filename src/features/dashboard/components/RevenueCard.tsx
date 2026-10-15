@@ -58,7 +58,7 @@ function RevenueBody({ today, history, settings }: RevenueCardProps) {
       {revenue.totalMinor === 0 ? (
         <EmptyMessage title="No confirmed bookings this month yet" hint="Revenue appears here once bookings are confirmed." />
       ) : (
-        <div role="img" aria-label={`Revenue by week. ${chartSummary}`} className="mt-4 min-h-44 flex-1">
+        <div role="img" aria-label={`Revenue by week. ${chartSummary}`} className="mt-4 h-56">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={revenue.weeks} margin={{ top: 4, right: 8, bottom: 0, left: 8 }} barCategoryGap="12%">
               <XAxis
@@ -72,7 +72,7 @@ function RevenueBody({ today, history, settings }: RevenueCardProps) {
                 formatter={(value) => [formatMoney(Number(value), settings.currency), "Revenue"]}
                 contentStyle={{ borderRadius: 10, borderColor: "var(--color-border)", fontSize: 12 }}
               />
-              <Bar dataKey="revenueMinor" fill="var(--color-primary)" radius={[2, 2, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="revenueMinor" fill="var(--color-primary)" radius={[2, 2, 0, 0]} maxBarSize={72} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
