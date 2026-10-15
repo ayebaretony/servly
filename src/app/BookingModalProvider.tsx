@@ -22,6 +22,7 @@ export function BookingModalProvider({ children }: { children: ReactNode }) {
         <BookingFormModal
           initialDate={prefill.date}
           initialStartMin={prefill.startMin}
+          initialCourtId={prefill.courtId}
           onClose={() => setPrefill(null)}
           onSaved={() => setBookingsVersion((n) => n + 1)}
         />

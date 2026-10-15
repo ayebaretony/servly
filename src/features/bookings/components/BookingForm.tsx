@@ -32,6 +32,7 @@ type BookingFormProps = {
   actor: { uid: string; isAdmin: boolean };
   initialDate?: string; // set when opened from a day or hour on the calendar
   initialStartMin?: number;
+  initialCourtId?: string; // set when opened from a free slot on a court's row
   booking?: Booking; // set to edit this booking instead of creating a new one
   onClose: () => void;
   onSaved: () => void; // lets a list on screen read again
@@ -43,7 +44,7 @@ function scheduleOf(booking: Booking, timezone: string): Schedule {
   return { courtId: booking.courtId, date: booking.date, startMin, endMin: startMin + booking.durationMinutes };
 }
 
-export function BookingForm({ courts, settings, actor, initialDate, initialStartMin, booking, onClose, onSaved }: BookingFormProps) {
+export function BookingForm({ courts, settings, actor, initialDate, initialStartMin, initialCourtId, booking, onClose, onSaved }: BookingFormProps) {
   const { showToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   // Fixed while the form is open, so what the form shows and what it validates always agree
@@ -78,7 +79,8 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
       (initialStartMin - openMin) % settings.slotMinutes === 0;
     const oneHour = Math.max(settings.slotMinutes, Math.floor(60 / settings.slotMinutes) * settings.slotMinutes);
     return {
-      courtId: bookable.length === 1 ? bookable[0].id : "",
+      // A court in maintenance can't be booked, so a clicked court only pre-fills when it is still bookable
+      courtId: bookable.length === 1 ? bookable[0].id : bookable.some((c) => c.id === initialCourtId) ? (initialCourtId ?? "") : "",
       customerName: "",
       customerPhone: "",
       customerEmail: "",
