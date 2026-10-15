@@ -34,7 +34,7 @@ export function WeeklyPerformance({ report, settings }: { report: RevenueReport;
       <h2 className="type-h2">Weekly performance</h2>
       <p className="mt-1 text-xs text-muted">Revenue and bookings by week</p>
 
-      <div role="img" aria-label={`Weekly performance. ${summary}`} className="mt-4 min-h-60 flex-1">
+      <div role="img" aria-label={`Weekly performance. ${summary}`} className="mt-4 h-64 xl:h-auto xl:min-h-60 xl:flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 8 }} barGap={4} barCategoryGap="25%">
             <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: "var(--color-border)" }} tick={(props: TickProps) => <WeekTick {...props} weeks={byLabel} currency={settings.currency} />} interval={0} height={48} />

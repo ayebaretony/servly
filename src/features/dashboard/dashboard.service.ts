@@ -29,7 +29,7 @@ export function subscribeToDay(
 }
 
 // One bounded range query (single field, so no composite index): last month plus this month.
-// It feeds the revenue card and the "vs last week" comparisons.
+// It feeds the "vs last week" comparisons.
 export async function fetchBookingsInRange(startDate: string, endDate: string): Promise<Booking[]> {
   const snapshot = await getDocs(query(bookingsRef(), where("date", ">=", startDate), where("date", "<=", endDate)));
   return snapshot.docs.map(readBooking);
