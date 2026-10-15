@@ -10,7 +10,6 @@ import { formatLongDate, hourInTimezone, todayInTimezone } from "@/lib/time";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
 import { RecentBookings } from "./components/RecentBookings";
-import { RevenueCard } from "./components/RevenueCard";
 import { StatCards } from "./components/StatCards";
 import { TodayGlance } from "./components/TodayGlance";
 import { useBookingHistory, useRecentBookings } from "./hooks/useBookingHistory";
@@ -78,7 +77,6 @@ function DashboardContent({ firstName, settings, courts }: { firstName: string; 
 
       {/* Full width: the schedule has a column for every hour of the day */}
       <TodayGlance today={today} todayBookings={todayBookings} todayBlocks={todayBlocks} courts={courts} settings={settings} />
-      <RevenueCard today={today} history={history} settings={settings} />
 
       <RecentBookings recent={recent} settings={settings} />
     </div>

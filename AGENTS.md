@@ -114,7 +114,7 @@ Two screenshots (Bookings, Courts) show a large empty gap at the top of the page
 - Greeting ("Good morning, {first name}") + today's date.
 - **4 stat cards:** Today's bookings, Today's revenue, Court utilization, Open slots today (with "Across N courts"). Show the change vs. last week where the screenshot shows it.
 - **Today at a glance:** timeline list of today's bookings, color-coded by court, with a "View calendar" link.
-- **Revenue this month:** big total, % vs. previous month, simple weekly bar chart, "Average booking value".
+- Monthly revenue (total, % vs. previous month, weekly bars, "Average booking value") lives on the Revenue page, not the dashboard.
 - **Recent bookings** table (customer, court, date & time, rate, total, status) + "View all bookings".
 
 ### Calendar (`Calendar.png`)

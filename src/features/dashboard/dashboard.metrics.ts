@@ -1,5 +1,4 @@
-import { changeRatio } from "@/lib/money";
-import { minutesOfDay, parseHHmm, weekOfMonth } from "@/lib/time";
+import { minutesOfDay, parseHHmm } from "@/lib/time";
 import type { Booking } from "@/types/booking";
 import type { Court } from "@/types/court";
 import type { CenterSettings } from "@/types/settings";
@@ -49,39 +48,5 @@ export function computeDayStats(dayBookings: Booking[], courts: Court[], setting
     openSlots: Math.max(totalSlots - occupiedSlots, 0),
     utilization: totalSlots > 0 ? Math.min(occupiedSlots / totalSlots, 1) : 0,
     courtCount: bookableCourtIds.size,
-  };
-}
-
-export type MonthRevenue = {
-  totalMinor: number;
-  previousMonthMinor: number;
-  changeVsPreviousMonth: number | null;
-  averageBookingMinor: number | null;
-  weeks: { label: string; revenueMinor: number }[];
-};
-
-// `history` holds last month and this month (see fetchBookingsInRange); `today` decides which month is "this" one.
-export function computeMonthRevenue(history: Booking[], today: string): MonthRevenue {
-  const monthPrefix = today.slice(0, 7);
-  const revenueBookings = history.filter(isRevenue);
-  const thisMonth = revenueBookings.filter((b) => b.date.startsWith(monthPrefix));
-  const previousMonth = revenueBookings.filter((b) => !b.date.startsWith(monthPrefix));
-
-  const totalMinor = thisMonth.reduce((sum, b) => sum + b.totalMinor, 0);
-  const previousMonthMinor = previousMonth.reduce((sum, b) => sum + b.totalMinor, 0);
-
-  // Show every week that has started, plus any later week that already has confirmed bookings
-  const lastWeek = Math.max(weekOfMonth(today), ...thisMonth.map((b) => weekOfMonth(b.date)));
-  const weeks = Array.from({ length: lastWeek }, (_, index) => ({
-    label: `week ${index + 1}`,
-    revenueMinor: thisMonth.filter((b) => weekOfMonth(b.date) === index + 1).reduce((sum, b) => sum + b.totalMinor, 0),
-  }));
-
-  return {
-    totalMinor,
-    previousMonthMinor,
-    changeVsPreviousMonth: changeRatio(totalMinor, previousMonthMinor),
-    averageBookingMinor: thisMonth.length > 0 ? Math.round(totalMinor / thisMonth.length) : null,
-    weeks,
   };
 }

@@ -5,6 +5,7 @@ import { useOpenNewBookingOn } from "@/app/useOpenNewBookingOn";
 import { Card } from "@/components/ui/Card";
 import { EmptyMessage, ErrorMessage } from "@/components/ui/StateMessages";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useAuth } from "@/features/auth/useAuth";
 import { BookingDetailsModal } from "@/features/bookings/components/BookingDetailsModal";
 import { BookingFormModal } from "@/features/bookings/components/BookingFormModal";
 import { CancelBookingModal } from "@/features/bookings/components/CancelBookingModal";
@@ -143,6 +144,9 @@ type GridProps = {
 };
 
 function ScheduleGrid({ today, bookings, blocks, courts, settings, onOpenBooking }: GridProps) {
+  const auth = useAuth();
+  // Admins may book times that already passed (AGENTS.md section 7); staff may not
+  const isAdmin = auth.status === "active" && auth.profile.role === "admin";
   const openNewBookingOn = useOpenNewBookingOn();
   const now = useNow();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -238,6 +242,7 @@ function ScheduleGrid({ today, bookings, blocks, courts, settings, onOpenBooking
                     openMin={openMin}
                     closeMin={closeMin}
                     slotMinutes={slotMinutes}
+                    isAdmin={isAdmin}
                     settings={settings}
                     onOpenBooking={onOpenBooking}
                     onBookFree={(startMin) => openNewBookingOn({ date: today, startMin, courtId: court.id })}
@@ -267,12 +272,13 @@ type SegmentProps = {
   openMin: number;
   closeMin: number;
   slotMinutes: number;
+  isAdmin: boolean;
   settings: CenterSettings;
   onOpenBooking: (booking: Booking) => void;
   onBookFree: (startMin: number) => void;
 };
 
-function Segment({ segment, court, openMin, closeMin, slotMinutes, settings, onOpenBooking, onBookFree }: SegmentProps) {
+function Segment({ segment, court, openMin, closeMin, slotMinutes, isAdmin, settings, onOpenBooking, onBookFree }: SegmentProps) {
   const left = percentAlong(segment.startMin, openMin, closeMin);
   const width = percentAlong(segment.endMin, openMin, closeMin) - left;
   // A 2px gap on each side keeps neighbours from touching
@@ -320,18 +326,20 @@ function Segment({ segment, court, openMin, closeMin, slotMinutes, settings, onO
     );
   }
 
-  // Free stretch. Only the part from now onwards on a court that is open for bookings can be clicked.
-  const startMin = segment.past || court.status === "maintenance" ? null : firstBookableStart(segment.startMin, segment.endMin, openMin, slotMinutes);
+  // Free stretch on a court that is open for bookings. Time that already passed can only be booked by an admin.
+  const clickable = court.status !== "maintenance" && (isAdmin || !segment.past);
+  const startMin = clickable ? firstBookableStart(segment.startMin, segment.endMin, openMin, slotMinutes) : null;
   const label = minutes >= 90 ? "Free slot" : minutes >= 45 ? "Free" : null;
 
   if (startMin === null) {
+    // Not bookable: dashed and faded, so it can't be mistaken for a free slot
     return (
       <div
-        aria-hidden={segment.past ? true : undefined}
+        title={segment.past ? "This time has passed" : undefined}
         style={position}
-        className={`${base} items-center border-border bg-page text-[11px] text-muted ${segment.past ? "opacity-60" : ""}`}
+        className={`${base} items-center border-dashed border-border bg-transparent text-[11px] text-muted ${segment.past ? "opacity-50" : ""}`}
       >
-        {court.status === "maintenance" && !segment.past ? (minutes >= 90 ? "Unavailable" : null) : null}
+        {court.status === "maintenance" && minutes >= 90 ? "Unavailable" : null}
       </div>
     );
   }
