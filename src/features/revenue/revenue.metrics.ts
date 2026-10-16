@@ -73,6 +73,7 @@ export function computeRevenueReport(bookings: Booking[], courts: Court[], month
   const confirmedBookings = inMonth.filter((b) => b.status === "confirmed");
   const previousConfirmed = previous.filter((b) => b.status === "confirmed");
   const totalMinor = sumMinor(confirmedBookings);
+  const paidCount = confirmedBookings.filter((b) => !b.complimentary).length;
 
   const byDate = groupBy(confirmedBookings, (b) => b.date);
   const dayCount = daysInclusive(month, monthEnd(month));
@@ -118,7 +119,8 @@ export function computeRevenueReport(bookings: Booking[], courts: Court[], month
     totalChange: changeRatio(totalMinor, sumMinor(previousConfirmed)),
     confirmedCount: confirmedBookings.length,
     countChange: changeRatio(confirmedBookings.length, previousConfirmed.length),
-    averageMinor: confirmedBookings.length > 0 ? Math.round(totalMinor / confirmedBookings.length) : null,
+    // Complimentary bookings are free, so they would drag the average down; it covers paid bookings only
+    averageMinor: paidCount > 0 ? Math.round(totalMinor / paidCount) : null,
     courtCount: courts.filter((c) => !c.archived).length,
     confirmed: statusTotals(inMonth, "confirmed"),
     pending: statusTotals(inMonth, "pending"),

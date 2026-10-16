@@ -60,7 +60,8 @@ export type NewBookingInput = {
   date: string; // "YYYY-MM-DD" at the center
   startMin: number;
   endMin: number;
-  hourlyRateMinor: number; // what this customer pays per hour, in minor units
+  hourlyRateMinor: number; // what this customer pays per hour, in minor units; 0 when complimentary
+  complimentary: boolean; // free of charge: stored with a rate and total of 0, shown as "Complimentary"
   status: NewBookingStatus;
   notes: string | null;
 };
@@ -72,6 +73,11 @@ export type CreatedBooking = {
   endAt: Date;
   totalMinor: number;
 };
+
+// A complimentary booking carries no rate; any other booking needs a positive one
+function hasValidRate({ complimentary, hourlyRateMinor }: Pick<NewBookingInput, "complimentary" | "hourlyRateMinor">): boolean {
+  return Number.isInteger(hourlyRateMinor) && (complimentary ? hourlyRateMinor === 0 : hourlyRateMinor > 0);
+}
 
 // Creates the booking and every slot it occupies in ONE transaction (AGENTS.md section 7, "Double-booking prevention").
 // If any slot already exists, nothing is written and the person is told the time is gone. Two people saving the same
@@ -90,9 +96,7 @@ export async function createBooking(
     now: new Date(),
   });
   if (problem) throw new BookingError("invalid", problem.message);
-  if (!Number.isInteger(input.hourlyRateMinor) || input.hourlyRateMinor <= 0) {
-    throw new BookingError("invalid", "Enter the hourly rate for this booking.");
-  }
+  if (!hasValidRate(input)) throw new BookingError("invalid", "Enter the hourly rate for this booking.");
 
   const startAt = zonedDateTime(input.date, input.startMin, settings.timezone);
   const endAt = zonedDateTime(input.date, input.endMin, settings.timezone);
@@ -132,6 +136,7 @@ export async function createBooking(
       // The rate is chosen per booking and stored with it, so the total never changes later
       hourlyRateMinor: input.hourlyRateMinor,
       totalMinor,
+      complimentary: input.complimentary,
       status: input.status,
       notes: input.notes,
       createdBy: actor.uid,
@@ -285,9 +290,7 @@ export async function updateBooking(
   actor: { isAdmin: boolean },
   settings: CenterSettings,
 ): Promise<CreatedBooking> {
-  if (!Number.isInteger(input.hourlyRateMinor) || input.hourlyRateMinor <= 0) {
-    throw new BookingError("invalid", "Enter the hourly rate for this booking.");
-  }
+  if (!hasValidRate(input)) throw new BookingError("invalid", "Enter the hourly rate for this booking.");
 
   const bookingRef = doc(db, "bookings", bookingId);
   const courtRef = doc(db, "courts", input.courtId);
@@ -349,7 +352,9 @@ export async function updateBooking(
       }
 
       const rateOrLengthChanged =
-        input.hourlyRateMinor !== booking.hourlyRateMinor || durationMinutes !== booking.durationMinutes;
+        input.hourlyRateMinor !== booking.hourlyRateMinor ||
+        input.complimentary !== (booking.complimentary === true) ||
+        durationMinutes !== booking.durationMinutes;
       // The saved total only moves when the person changed the rate or the length (AGENTS.md "Money rules")
       const totalMinor = rateOrLengthChanged ? calcTotalMinor(input.hourlyRateMinor, durationMinutes) : booking.totalMinor;
       const startAt = zonedDateTime(input.date, input.startMin, settings.timezone);
@@ -367,6 +372,7 @@ export async function updateBooking(
         durationMinutes,
         hourlyRateMinor: input.hourlyRateMinor,
         totalMinor,
+        complimentary: input.complimentary,
         status: input.status,
         notes: input.notes,
         updatedAt: serverTimestamp(),

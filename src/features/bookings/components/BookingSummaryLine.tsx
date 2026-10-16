@@ -1,4 +1,4 @@
-import { formatMoney } from "@/lib/money";
+import { formatBookingTotal } from "@/lib/money";
 import { formatDayLabel, formatTimeRange } from "@/lib/time";
 import type { Booking } from "@/types/booking";
 import type { CenterSettings } from "@/types/settings";
@@ -15,7 +15,7 @@ export function BookingSummaryLine({ booking, settings, today }: { booking: Book
         {" · "}
         {when}
         {" · "}
-        {formatMoney(booking.totalMinor, settings.currency)}
+        {formatBookingTotal(booking, settings.currency)}
       </span>
     </p>
   );

@@ -9,7 +9,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { BookingDetailsModal } from "@/features/bookings/components/BookingDetailsModal";
 import { BookingFormModal } from "@/features/bookings/components/BookingFormModal";
 import { CancelBookingModal } from "@/features/bookings/components/CancelBookingModal";
-import { formatMoney } from "@/lib/money";
+import { formatBookingTotal } from "@/lib/money";
 import { formatMinutes, formatTimeRange, minutesOfDay, parseHHmm, todayInTimezone } from "@/lib/time";
 import type { AsyncData } from "@/lib/useAsyncData";
 import { useNow } from "@/lib/useNow";
@@ -290,7 +290,7 @@ function Segment({ segment, court, openMin, closeMin, slotMinutes, isAdmin, sett
   if (segment.kind === "booking") {
     const { booking } = segment;
     const range = formatTimeRange(booking.startAt.toDate(), booking.endAt.toDate(), settings.timezone);
-    const summary = `${range} · ${formatMoney(booking.totalMinor, settings.currency)}${booking.status === "pending" ? " · Pending" : ""}`;
+    const summary = `${range} · ${formatBookingTotal(booking, settings.currency)}${booking.status === "pending" ? " · Pending" : ""}`;
     return (
       <button
         type="button"

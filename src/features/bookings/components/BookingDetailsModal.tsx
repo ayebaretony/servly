@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal, ModalBody, ModalFooter } from "@/components/ui/Modal";
-import { formatMoney, formatRate } from "@/lib/money";
+import { formatBookingRate, formatBookingTotal } from "@/lib/money";
 import { formatClock, formatDayLabel, formatDuration, formatLongDate, formatTimeRange, todayInTimezone } from "@/lib/time";
 import type { Booking } from "@/types/booking";
 import type { CenterSettings } from "@/types/settings";
@@ -44,9 +44,9 @@ export function BookingDetailsModal({ booking, settings, today, onClose, onCance
             {formatTimeRange(booking.startAt.toDate(), booking.endAt.toDate(), settings.timezone)} ·{" "}
             {formatDuration(booking.durationMinutes)}
           </Detail>
-          <Detail label="Rate">{formatRate(booking.hourlyRateMinor, settings.currency)}</Detail>
+          <Detail label="Rate">{formatBookingRate(booking, settings.currency)}</Detail>
           <Detail label="Total">
-            <span className="font-semibold">{formatMoney(booking.totalMinor, settings.currency)}</span>
+            <span className="font-semibold">{formatBookingTotal(booking, settings.currency)}</span>
           </Detail>
           <Detail label="Booked on">
             {formatDayLabel(todayInTimezone(settings.timezone, madeAt), today)}, {formatClock(madeAt, settings.timezone)}

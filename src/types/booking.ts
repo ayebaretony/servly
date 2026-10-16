@@ -16,6 +16,8 @@ export type Booking = {
   durationMinutes: number;
   hourlyRateMinor: number;
   totalMinor: number;
+  // Free of charge (guest, giveaway). Rate and total are stored as 0; older bookings have no field, so read it as `=== true`.
+  complimentary?: boolean;
   status: BookingStatus;
   notes: string | null;
   createdBy: string;

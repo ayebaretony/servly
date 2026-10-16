@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
-import { formatMoney, formatRate } from "@/lib/money";
+import { formatBookingRate, formatBookingTotal } from "@/lib/money";
 import { formatDuration, formatMonthDay } from "@/lib/time";
 import type { CenterSettings } from "@/types/settings";
 import type { RevenueReport } from "../revenue.metrics";
@@ -39,9 +39,9 @@ export function RecentRevenue({ report, settings }: { report: RevenueReport; set
                   <td className="px-4 py-3.5 text-muted">{formatMonthDay(booking.date)}</td>
                   <td className="px-4 py-3.5 font-semibold text-ink">{booking.customerName}</td>
                   <td className="px-4 py-3.5 text-muted">{booking.courtName}</td>
-                  <td className="px-4 py-3.5 text-muted">{formatRate(booking.hourlyRateMinor, settings.currency)}</td>
+                  <td className="px-4 py-3.5 text-muted">{formatBookingRate(booking, settings.currency)}</td>
                   <td className="px-4 py-3.5 text-muted">{formatDuration(booking.durationMinutes)}</td>
-                  <td className="px-4 py-3.5 text-ink">{formatMoney(booking.totalMinor, settings.currency)}</td>
+                  <td className="px-4 py-3.5 text-ink">{formatBookingTotal(booking, settings.currency)}</td>
                   <td className="px-4 py-3.5">
                     <StatusBadge status={booking.status} />
                   </td>

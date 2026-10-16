@@ -2,7 +2,7 @@ import { Wrench } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyMessage } from "@/components/ui/StateMessages";
-import { formatMoney } from "@/lib/money";
+import { formatBookingTotal, formatMoney } from "@/lib/money";
 import { formatTimeRange, formatWeekdayDate } from "@/lib/time";
 import type { AsyncData } from "@/lib/useAsyncData";
 import type { Block } from "@/types/block";
@@ -84,7 +84,7 @@ export function DayPanel({
                     </span>
                   </span>
                   <span className="shrink-0 text-xs font-semibold text-ink">
-                    {formatMoney(booking.totalMinor, settings.currency)}
+                    {formatBookingTotal(booking, settings.currency)}
                   </span>
                 </button>
               </li>
