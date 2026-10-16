@@ -19,6 +19,7 @@ export type BookingFormValues = {
   start: string;
   end: string;
   rate: string;
+  complimentary: boolean; // no charge: the rate is not asked for
   status: NewBookingStatus;
   notes: string;
 };
@@ -104,7 +105,9 @@ export function validateBooking(values: BookingFormValues, context: ValidationCo
 
   // Each customer can pay a different rate (memberships, partnerships), so it is typed per booking
   const rate = parseMajorToMinor(values.rate);
-  if (!values.rate.trim()) errors.rate = "Enter the hourly rate for this customer.";
+  if (values.complimentary) {
+    // Free of charge: nothing to check
+  } else if (!values.rate.trim()) errors.rate = "Enter the hourly rate for this customer.";
   else if (rate === null) errors.rate = "Enter an amount like 150 or 52.50.";
   else if (rate <= 0) errors.rate = "The rate must be more than zero.";
   else if (rate > RATE_MAX_MINOR) errors.rate = "That rate looks too high. Check the amount.";

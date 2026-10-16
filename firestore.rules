@@ -105,7 +105,7 @@ service cloud.firestore {
       return b.keys().hasOnly([
           'courtId', 'courtName', 'customerName', 'customerPhone', 'customerEmail', 'date', 'startAt', 'endAt',
           'durationMinutes', 'hourlyRateMinor', 'totalMinor', 'status', 'notes', 'createdBy', 'createdAt',
-          'updatedAt', 'searchKey'
+          'updatedAt', 'searchKey', 'complimentary'
         ])
         && b.keys().hasAll([
           'courtId', 'courtName', 'customerName', 'customerPhone', 'customerEmail', 'date', 'startAt', 'endAt',
@@ -122,6 +122,9 @@ service cloud.firestore {
         && b.durationMinutes is int && b.durationMinutes > 0
         && b.hourlyRateMinor is int && b.hourlyRateMinor >= 0
         && b.totalMinor is int && b.totalMinor >= 0
+        && (!('complimentary' in b) || b.complimentary is bool)
+        // A complimentary booking is free: it must carry no rate and no total
+        && (!('complimentary' in b) || b.complimentary != true || (b.hourlyRateMinor == 0 && b.totalMinor == 0))
         && b.status in ['confirmed', 'pending', 'cancelled']
         && (b.notes == null || b.notes is string)
         && b.createdBy is string

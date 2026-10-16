@@ -6,7 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/useToast";
 import { bookedRanges, overlapsTaken } from "@/lib/conflicts";
-import { calcTotalMinor, formatMoney, formatRate, minorToMajorInput, parseMajorToMinor } from "@/lib/money";
+import { calcTotalMinor, COMPLIMENTARY_LABEL, formatMoney, formatRate, minorToMajorInput, parseMajorToMinor } from "@/lib/money";
 import {
   formatDuration,
   formatMinutes,
@@ -63,7 +63,8 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
         date: booking.date,
         start: String(original.startMin),
         end: String(original.endMin),
-        rate: minorToMajorInput(booking.hourlyRateMinor),
+        rate: booking.complimentary ? "" : minorToMajorInput(booking.hourlyRateMinor),
+        complimentary: booking.complimentary === true,
         // A cancelled booking is reinstated from its menu, not edited, so this is never "cancelled"
         status: booking.status === "pending" ? "pending" : "confirmed",
         notes: booking.notes ?? "",
@@ -88,6 +89,7 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
       start: startFits ? String(initialStartMin) : "",
       end: startFits ? String(Math.min(initialStartMin + oneHour, closeMin)) : "",
       rate: "",
+      complimentary: false,
       status: "confirmed",
       notes: "",
     };
@@ -108,7 +110,8 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
   const startMin = parseMinutes(values.start);
   const endMin = parseMinutes(values.end);
   // null until the typed rate is a valid amount
-  const hourlyRateMinor = parseMajorToMinor(values.rate);
+  // A complimentary booking is saved with a rate of 0
+  const hourlyRateMinor = values.complimentary ? 0 : parseMajorToMinor(values.rate);
 
   const validationContext = { courts, settings, isAdmin: actor.isAdmin, now: openedAt, taken, original };
   const errors = submitted ? validateBooking(values, validationContext) : {};
@@ -177,12 +180,13 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
         startMin,
         endMin,
         hourlyRateMinor,
+        complimentary: values.complimentary,
         status: values.status,
         notes: values.notes.trim() || null,
       };
       const saved = booking ? await updateBooking(booking.id, input, actor, settings) : await createBooking(input, actor, settings);
       showToast(
-        `Booking ${booking ? "updated" : "created"}: ${saved.courtName}, ${formatTimeRange(saved.startAt, saved.endAt, settings.timezone)} (${formatMoney(saved.totalMinor, settings.currency)}).`,
+        `Booking ${booking ? "updated" : "created"}: ${saved.courtName}, ${formatTimeRange(saved.startAt, saved.endAt, settings.timezone)} (${values.complimentary ? COMPLIMENTARY_LABEL : formatMoney(saved.totalMinor, settings.currency)}).`,
       );
       onSaved();
       onClose();
@@ -346,29 +350,51 @@ export function BookingForm({ courts, settings, actor, initialDate, initialStart
             <h3 id="booking-price" className="type-overline text-muted">
               Price
             </h3>
-            <Input
-              label={`Hourly rate (${settings.currency})`}
-              value={values.rate}
-              onChange={(event) => set("rate", event.target.value)}
-              error={errors.rate}
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder="e.g. 150"
-            />
-            <p className="-mt-2 text-xs text-muted">
-              Set the rate this customer pays (for example a member or partner rate). Partial hours are billed proportionally.
-            </p>
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={values.complimentary}
+                onChange={(event) => set("complimentary", event.target.checked)}
+                className="focus-ring h-4 w-4 rounded border accent-primary"
+              />
+              Complimentary (no charge)
+            </label>
+            {values.complimentary ? (
+              <p className="text-xs text-muted">
+                This booking is free. It shows as “{COMPLIMENTARY_LABEL}” and adds nothing to revenue.
+              </p>
+            ) : (
+              <>
+                <Input
+                  label={`Hourly rate (${settings.currency})`}
+                  value={values.rate}
+                  onChange={(event) => set("rate", event.target.value)}
+                  error={errors.rate}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder="e.g. 150"
+                />
+                <p className="-mt-2 text-xs text-muted">
+                  Set the rate this customer pays (for example a member or partner rate). Partial hours are billed proportionally.
+                </p>
+              </>
+            )}
           </section>
 
           {/* Worked out from the typed rate; the saved booking keeps its own copy (AGENTS.md "Money rules") */}
           <dl aria-live="polite" className="grid grid-cols-3 gap-3 rounded-card bg-sidebar px-4 py-3">
             <SummaryItem label="Duration" value={durationMinutes ? formatDuration(durationMinutes) : "–"} />
-            <SummaryItem label="Rate" value={hourlyRateMinor ? formatRate(hourlyRateMinor, settings.currency) : "–"} />
+            <SummaryItem
+              label="Rate"
+              value={values.complimentary ? COMPLIMENTARY_LABEL : hourlyRateMinor ? formatRate(hourlyRateMinor, settings.currency) : "–"}
+            />
             <SummaryItem
               label="Total"
               emphasis
               value={
-                hourlyRateMinor && durationMinutes
+                values.complimentary
+                  ? COMPLIMENTARY_LABEL
+                  : hourlyRateMinor && durationMinutes
                   ? formatMoney(calcTotalMinor(hourlyRateMinor, durationMinutes), settings.currency)
                   : "–"
               }

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
 import { EmptyMessage, ErrorMessage } from "@/components/ui/StateMessages";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { formatMoney, formatRate } from "@/lib/money";
+import { formatBookingRate, formatBookingTotal } from "@/lib/money";
 import { formatDateAndTimeRange } from "@/lib/time";
 import type { AsyncData } from "@/lib/useAsyncData";
 import type { Booking } from "@/types/booking";
@@ -74,8 +74,8 @@ function RecentBody({ recent, settings }: { recent: AsyncData<Booking[]>; settin
                   <td className="px-4 py-4 text-muted">
                     {formatDateAndTimeRange(booking.startAt.toDate(), booking.endAt.toDate(), settings.timezone)}
                   </td>
-                  <td className="px-4 py-4 text-muted">{formatRate(booking.hourlyRateMinor, settings.currency)}</td>
-                  <td className="px-4 py-4 text-ink">{formatMoney(booking.totalMinor, settings.currency)}</td>
+                  <td className="px-4 py-4 text-muted">{formatBookingRate(booking, settings.currency)}</td>
+                  <td className="px-4 py-4 text-ink">{formatBookingTotal(booking, settings.currency)}</td>
                   <td className="px-4 py-4">
                     <StatusBadge status={booking.status} />
                   </td>

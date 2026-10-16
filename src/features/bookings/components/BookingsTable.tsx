@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyMessage, ErrorMessage } from "@/components/ui/StateMessages";
-import { formatMoney, formatRate } from "@/lib/money";
+import { formatBookingRate, formatBookingTotal } from "@/lib/money";
 import { formatDayLabel, formatTimeRange } from "@/lib/time";
 import type { AsyncData } from "@/lib/useAsyncData";
 import type { Booking } from "@/types/booking";
@@ -153,9 +153,9 @@ export function BookingsTable({
                       <td className="max-w-[11rem] truncate px-2.5 py-4 text-ink" title={booking.customerEmail ?? undefined}>
                         {booking.customerEmail ?? <span className="text-muted">Email not provided</span>}
                       </td>
-                      <td className="whitespace-nowrap px-2.5 py-4 text-ink">{formatRate(booking.hourlyRateMinor, settings.currency)}</td>
+                      <td className="whitespace-nowrap px-2.5 py-4 text-ink">{formatBookingRate(booking, settings.currency)}</td>
                       <td className="whitespace-nowrap px-2.5 py-4 font-semibold text-ink">
-                        {formatMoney(booking.totalMinor, settings.currency)}
+                        {formatBookingTotal(booking, settings.currency)}
                       </td>
                       <td className="px-2.5 py-4">
                         <StatusBadge status={booking.status} />

@@ -23,6 +23,17 @@ export function formatMoney(minor: number, currency: string): string {
   return getFormatter(currency, minor % 100 !== 0).format(minor / 100);
 }
 
+export const COMPLIMENTARY_LABEL = "Complimentary";
+
+// Rate and total as shown for a booking: complimentary ones read "Complimentary", never "AED 0"
+export function formatBookingRate(booking: { complimentary?: boolean; hourlyRateMinor: number }, currency: string): string {
+  return booking.complimentary ? COMPLIMENTARY_LABEL : formatRate(booking.hourlyRateMinor, currency);
+}
+
+export function formatBookingTotal(booking: { complimentary?: boolean; totalMinor: number }, currency: string): string {
+  return booking.complimentary ? COMPLIMENTARY_LABEL : formatMoney(booking.totalMinor, currency);
+}
+
 // "AED 150/hr"
 export function formatRate(hourlyRateMinor: number, currency: string): string {
   return `${formatMoney(hourlyRateMinor, currency)}/hr`;

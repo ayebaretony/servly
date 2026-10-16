@@ -1,4 +1,4 @@
-import { minorToMajorInput } from "@/lib/money";
+import { COMPLIMENTARY_LABEL, minorToMajorInput } from "@/lib/money";
 import { formatClock } from "@/lib/time";
 import type { Booking } from "@/types/booking";
 import type { CenterSettings } from "@/types/settings";
@@ -38,8 +38,8 @@ export function buildBookingsCsv(bookings: Booking[], settings: CenterSettings):
       textCell(booking.customerName),
       textCell(booking.customerPhone),
       textCell(booking.customerEmail ?? ""),
-      minorToMajorInput(booking.hourlyRateMinor),
-      minorToMajorInput(booking.totalMinor),
+      booking.complimentary ? COMPLIMENTARY_LABEL : minorToMajorInput(booking.hourlyRateMinor),
+      booking.complimentary ? COMPLIMENTARY_LABEL : minorToMajorInput(booking.totalMinor),
       STATUS_LABEL[booking.status],
     ]
       .map(csvField)
