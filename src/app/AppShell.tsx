@@ -4,6 +4,7 @@ import { AceSuspenseFallback } from "@/components/ui/AceLoadingState";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { useAuth } from "@/features/auth/useAuth";
 import { TourProvider } from "@/features/tour/TourProvider";
+import { BookingReminders } from "@/features/reminders/BookingReminders";
 import { UsersProvider } from "@/features/settings/UsersProvider";
 import { BookingModalProvider } from "./BookingModalProvider";
 import { SessionGuard } from "./SessionGuard";
@@ -22,6 +23,7 @@ export function AppShell() {
         <BookingModalProvider>
           <TourProvider>
             <SessionGuard />
+            {isAdmin && <BookingReminders />}
             <ShellLayout />
           </TourProvider>
         </BookingModalProvider>

@@ -41,3 +41,27 @@ export function playPop() {
     // Blocked or unsupported: stay quiet
   }
 }
+
+// A louder two-note chime for reminders the admin must not miss (the pop is too easy to overlook)
+export function playChime() {
+  try {
+    const audio = getContext();
+    if (audio.state === "suspended") void audio.resume();
+
+    [660, 880].forEach((frequency, index) => {
+      const start = audio.currentTime + index * 0.22;
+      const oscillator = audio.createOscillator();
+      const volume = audio.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency, start);
+      volume.gain.setValueAtTime(0.0001, start);
+      volume.gain.exponentialRampToValueAtTime(0.4, start + 0.02);
+      volume.gain.exponentialRampToValueAtTime(0.0001, start + 0.5);
+      oscillator.connect(volume).connect(audio.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.55);
+    });
+  } catch {
+    // Blocked or unsupported: the pop-up still shows
+  }
+}
