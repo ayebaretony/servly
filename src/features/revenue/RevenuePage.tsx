@@ -77,8 +77,8 @@ function RevenueContent({ settings, courts }: { settings: CenterSettings; courts
   );
 
   function exportReport() {
-    if (!report) return;
-    downloadCsv(`servly-revenue-${month.slice(0, 7)}.csv`, buildRevenueCsv(report, settings));
+    if (!report || bookings.status !== "ready") return;
+    downloadCsv(`servly-revenue-${month.slice(0, 7)}.csv`, buildRevenueCsv(report, bookings.data, settings));
     showToast(`Exported the ${formatMonthYear(month)} revenue report.`);
   }
 
